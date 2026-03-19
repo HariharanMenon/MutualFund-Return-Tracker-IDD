@@ -1,0 +1,602 @@
+openapi: 3.1.0
+
+info:
+  title: Mutual Fund XIRR Tracker API
+  version: 1.0.0
+  description: |
+    A stateless web API for calculating XIRR (Extended Internal Rate of Return) 
+    on mutual fund investments from Excel transaction files.
+    
+    **Key Features:**
+    - File upload (Excel .xlsx format only)
+    - XIRR calculation with high precision
+    - Transaction validation with detailed error messages
+    - Summary metrics (Total Invested, Final Proceeds, Profit/Loss)
+    - Stateless architecture (in-memory processing, no persistence)
+    
+    **Constraints:**
+    - Maximum file size: 10 MB
+    - Maximum transactions per file: 10,000 rows
+    - Date format: DD-MMM-YYYY only
+    - First worksheet only (additional sheets ignored)
+    - Render free tier (cold-start delays ~30s expected)
+  
+  license:
+    name: MIT
+    identifier: MIT
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+  - url: https://mf-xirr-backend.onrender.com
+    description: Render production server (free tier)
+    x-environment: production
+
+tags:
+  - name: Upload
+    description: File upload and processing endpoints
+  - name: Health
+    description: Server health and status endpoints
+
+paths:
+  /api/upload:
+    post:
+      tags:
+        - Upload
+      summary: Upload and process mutual fund transaction file
+      operationId: uploadTransactionFile
+      description: |
+        Accepts an Excel (.xlsx) file containing mutual fund transaction history 
+        for a single fund. Validates data, calculates XIRR, and returns transaction 
+        details with summary metrics.
+        
+        **File Requirements:**
+        - Format: .xlsx only
+        - Size: ≤ 10 MB
+        - Sheets: First worksheet parsed; additional sheets ignored
+        - Rows: ≥ 2 (at least 1 investment + 1 redemption), ≤ 10,000
+        
+        **Column Requirements (case-insensitive, whitespace trimmed):**
+        - Date (mandatory): DD-MMM-YYYY format only
+        - Transaction Type (mandatory): BUY, PURCHASE, SIP, SELL, REDEMPTION, etc.
+        - Amount (mandatory): Numeric currency amount
+        - Units (conditional): Numeric; optional for Stamp Duty/STT
+        - Price (conditional): Empty for SELL/REDEMPTION/Stamp Duty/STT
+        - Unit Balance (conditional): Empty for SELL/REDEMPTION/Stamp Duty/STT
+        
+        **Transaction Type Rules:**
+        - Investment types: BUY, PURCHASE, SIP, SYSTEMATIC INVESTMENT, DIVIDEND REINVEST, STAMP DUTY, STT PAID
+        - Exit types: SELL, REDEMPTION
+        - Final transaction must be SELL or REDEMPTION with Unit Balance = 0
+        
+        **Validation Rules:**
+        - All required columns must be present
+        - Dates must be 1960 or later (no future dates)
+        - Amounts must be non-negative (except SELL/REDEMPTION sign conventions)
+        - Stamp Duty/STT: Price and Unit Balance must be empty
+        - SELL/REDEMPTION: Price and Unit Balance must be empty
+        - All other BUY/SIP: All columns required (Date, Type, Amount, Units, Price, Balance)
+        - Unit balance cumulative validation (when provided)
+        - Last transaction must be SELL/REDEMPTION with Unit Balance = 0
+        - Minimum 2 transactions required
+        - Maximum 10,000 transactions per file
+      
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Excel file (.xlsx) containing transaction data
+              required:
+                - file
+            encoding:
+              file:
+                contentType: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+      
+      responses:
+        '200':
+          description: File processed successfully. Returns transactions, XIRR, and summary metrics.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadSuccessResponse'
+              examples:
+                happyPath:
+                  summary: Successful upload with positive XIRR
+                  value:
+                    success: true
+                    xirr: 12.54
+                    summaryMetrics:
+                      totalInvested: 1250000.00
+                      finalProceeds: 1475500.00
+                      profitLoss: 225500.00
+                    transactions:
+                      - date: "01-Jan-2020"
+                        transactionType: "BUY"
+                        amount: 100000.00
+                        units: 10000.000
+                        price: 10.00
+                        unitBalance: 10000.000
+                      - date: "15-Jan-2021"
+                        transactionType: "SELL"
+                        amount: 118100.00
+                        units: 10000.000
+                        price: null
+                        unitBalance: 0.000
+                negativeXIRR:
+                  summary: Successful upload with negative XIRR (loss scenario)
+                  value:
+                    success: true
+                    xirr: -3.21
+                    summaryMetrics:
+                      totalInvested: 500000.00
+                      finalProceeds: 450000.00
+                      profitLoss: -50000.00
+                    transactions:
+                      - date: "01-Jan-2022"
+                        transactionType: "SIP"
+                        amount: 50000.00
+                        units: 5000.000
+                        price: 10.00
+                        unitBalance: 5000.000
+                      - date: "01-Feb-2022"
+                        transactionType: "SIP"
+                        amount: 50000.00
+                        units: 4500.000
+                        price: 11.11
+                        unitBalance: 9500.000
+                      - date: "01-Jan-2023"
+                        transactionType: "REDEMPTION"
+                        amount: 450000.00
+                        units: 9500.000
+                        price: null
+                        unitBalance: 0.000
+        
+        '400':
+          description: |
+            Bad Request. File validation failed. Returns specific error message 
+            indicating which validation rule was violated and how to fix it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingColumn:
+                  summary: Missing required column
+                  value:
+                    success: false
+                    error:
+                      message: "File validation failed"
+                      details: "Missing required column: 'Amount'. Columns found: Date, Transaction Type, Units"
+                invalidDateFormat:
+                  summary: Invalid date format in transaction row
+                  value:
+                    success: false
+                    error:
+                      message: "File validation failed"
+                      details: "Row 5: Date column contains invalid format '01-01-2020' (expected DD-MMM-YYYY, e.g., 15-Jan-2020)"
+                futureDate:
+                  summary: Date is in the future
+                  value:
+                    success: false
+                    error:
+                      message: "File validation failed"
+                      details: "Row 3: Date '25-Dec-2026' is in the future. Transactions must be dated today or earlier."
+                invalidTransactionType:
+                  summary: Invalid transaction type
+                  value:
+                    success: false
+                    error:
+                      message: "File validation failed"
+                      details: "Row 7: Invalid transaction type 'TRANSFER'. Allowed types: BUY, PURCHASE, SIP, SELL, REDEMPTION, DIVIDEND REINVEST, STAMP DUTY, STT PAID"
+                missingRedemption:
+                  summary: Missing final redemption/sale transaction
+                  value:
+                    success: false
+                    error:
+                      message: "File validation failed"
+                      details: "Last transaction must be SELL or REDEMPTION with Unit Balance = 0. Current balance: 1500.000 units"
+                invalidUnitBalance:
+                  summary: Unit balance is not zero at final redemption
+                  value:
+                    success: false
+                    error:
+                      message: "File validation failed"
+                      details: "Row 10: Final REDEMPTION transaction has Unit Balance 250.500, but it must be 0.000"
+                insufficientTransactions:
+                  summary: Fewer than 2 transactions (minimum requirement)
+                  value:
+                    success: false
+                    error:
+                      message: "File validation failed"
+                      details: "Minimum 2 transactions required (1 investment + 1 redemption). Found: 1"
+                tooManyTransactions:
+                  summary: More than 10,000 transactions (exceeds limit)
+                  value:
+                    success: false
+                    error:
+                      message: "File validation failed"
+                      details: "File contains 15,234 transactions. Maximum allowed: 10,000"
+                stampDutyError:
+                  summary: Stamp Duty/STT must not have Price or Unit Balance
+                  value:
+                    success: false
+                    error:
+                      message: "File validation failed"
+                      details: "Row 4: STAMP DUTY transaction must have empty Price and Unit Balance columns. Found: Price=0.50, Unit Balance=9500.000"
+                sellPriceError:
+                  summary: SELL must not have Price or Unit Balance
+                  value:
+                    success: false
+                    error:
+                      message: "File validation failed"
+                      details: "Row 8: SELL transaction must have empty Price and Unit Balance columns. Found Price=50.00"
+                inconsistentBalance:
+                  summary: Cumulative units don't match Unit Balance
+                  value:
+                    success: false
+                    error:
+                      message: "File validation failed"
+                      details: "Row 6: Cumulative units (5000.000) don't match Unit Balance (4800.000)"
+                invalidNumericValue:
+                  summary: Non-numeric value in numeric column
+                  value:
+                    success: false
+                    error:
+                      message: "File validation failed"
+                      details: "Row 12: Amount column contains non-numeric value 'ABC'. Expected numeric value (e.g., 50000.50)"
+        
+        '413':
+          description: Payload Too Large. File size exceeds 10 MB limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                fileTooLarge:
+                  summary: File exceeds 10 MB limit
+                  value:
+                    success: false
+                    error:
+                      message: "File too large"
+                      details: "File size is 15.2 MB, but maximum allowed is 10 MB. Please reduce file size or remove older transactions."
+        
+        '415':
+          description: Unsupported Media Type. File is not .xlsx format.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidFormat:
+                  summary: File is not .xlsx format
+                  value:
+                    success: false
+                    error:
+                      message: "Invalid file format"
+                      details: "File 'transactions.csv' is not a valid .xlsx file. Please upload an Excel file with .xlsx extension."
+        
+        '422':
+          description: |
+            Unprocessable Entity. File format is valid .xlsx but content cannot be processed 
+            (e.g., corrupted, empty worksheet, XIRR calculation failure).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                emptyWorksheet:
+                  summary: Worksheet contains no data
+                  value:
+                    success: false
+                    error:
+                      message: "File processing failed"
+                      details: "First worksheet is empty or contains no transaction data. Please check the file and try again."
+                xirCalculationFailed:
+                  summary: XIRR calculation could not converge
+                  value:
+                    success: false
+                    error:
+                      message: "XIRR calculation failed"
+                      details: "XIRR calculation did not converge for the given cash flows. This may indicate inconsistent transaction data or extreme returns. Please verify transaction amounts and dates."
+                corruptedFile:
+                  summary: File is corrupted and cannot be read
+                  value:
+                    success: false
+                    error:
+                      message: "File processing failed"
+                      details: "File appears to be corrupted and cannot be read. Please ensure it is a valid Excel file and try again."
+        
+        '500':
+          description: Internal Server Error. Unexpected server-side error during processing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                internalError:
+                  summary: Unexpected server-side error
+                  value:
+                    success: false
+                    error:
+                      message: "Internal server error"
+                      details: "An unexpected error occurred during file processing. Please try again later or contact support."
+
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Server health check
+      operationId: healthCheck
+      description: Simple health check endpoint to verify server is running and responsive.
+      
+      responses:
+        '200':
+          description: Server is healthy and operational
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy]
+                  timestamp:
+                    type: string
+                    format: date-time
+                    description: ISO 8601 timestamp of health check
+                  version:
+                    type: string
+                    description: API version
+                required:
+                  - status
+              examples:
+                healthy:
+                  summary: Server is healthy and operational
+                  value:
+                    status: healthy
+                    timestamp: "2026-03-19T10:30:45.123Z"
+                    version: "1.0.0"
+
+components:
+  schemas:
+    Transaction:
+      type: object
+      description: A single mutual fund transaction record
+      properties:
+        date:
+          type: string
+          format: date
+          pattern: '^\d{2}-[A-Za-z]{3}-\d{4}$'
+          description: Transaction date in DD-MMM-YYYY format (e.g., 15-Jan-2020)
+          examples:
+            - "15-Jan-2020"
+        transactionType:
+          type: string
+          description: Type of transaction (investment, exit, or fee)
+          enum:
+            - BUY
+            - PURCHASE
+            - SIP
+            - SIP PURCHASE
+            - SYSTEMATIC INVESTMENT
+            - SYSTEMATIC INVESTMENT PLAN
+            - SELL
+            - REDEMPTION
+            - DIVIDEND REINVEST
+            - STAMP DUTY
+            - STT PAID
+          examples:
+            - "BUY"
+        amount:
+          type: number
+          format: double
+          description: |
+            Transaction amount in currency (₹). 
+            For BUY/SIP: positive (amount invested)
+            For SELL/REDEMPTION: positive (amount received)
+            For STAMP DUTY/STT: positive (cost paid)
+            Displayed with 2 decimal places.
+          examples:
+            - 100000.00
+          minimum: 0
+        units:
+          type:
+            - number
+            - "null"
+          format: double
+          description: |
+            Number of units transacted. 
+            Null for STAMP DUTY/STT PAID (optional).
+            Displayed with 3 decimal places.
+          examples:
+            - 10000.000
+            - null
+        price:
+          type:
+            - number
+            - "null"
+          format: double
+          description: |
+            Unit price (₹/unit) at transaction time.
+            Null for SELL, REDEMPTION, STAMP DUTY, STT PAID.
+            Displayed with 2–4 decimal places as per original input.
+          examples:
+            - 10.00
+            - null
+        unitBalance:
+          type:
+            - number
+            - "null"
+          format: double
+          description: |
+            Cumulative unit balance after transaction.
+            Null for SELL, REDEMPTION, STAMP DUTY, STT PAID.
+            Must be 0.000 for final SELL/REDEMPTION.
+            Displayed with 3 decimal places.
+          examples:
+            - 10000.000
+            - 0.000
+            - null
+      required:
+        - date
+        - transactionType
+        - amount
+    
+    SummaryMetrics:
+      type: object
+      description: High-level financial summary of all transactions
+      properties:
+        totalInvested:
+          type: number
+          format: double
+          description: |
+            Sum of all investment amounts (BUY, PURCHASE, SIP, SYSTEMATIC INVESTMENT, 
+            DIVIDEND REINVEST, STAMP DUTY, STT PAID).
+            Displayed with 2 decimal places and ₹ currency symbol.
+          examples:
+            - 1250000.00
+        finalProceeds:
+          type: number
+          format: double
+          description: |
+            Amount received from final SELL or REDEMPTION transaction.
+            Displayed with 2 decimal places and ₹ currency symbol.
+          examples:
+            - 1475500.00
+        profitLoss:
+          type: number
+          format: double
+          description: |
+            Profit or Loss = Final Proceeds – Total Invested.
+            Positive (green) for profit; negative (red) for loss.
+            Displayed with 2 decimal places and ₹ currency symbol.
+          examples:
+            - 225500.00
+            - -50000.00
+      required:
+        - totalInvested
+        - finalProceeds
+        - profitLoss
+    
+    UploadSuccessResponse:
+      type: object
+      description: Successful response from file upload endpoint
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+          description: Indicates successful processing
+          examples:
+            - true
+        xirr:
+          type: number
+          format: double
+          description: |
+            XIRR (Extended Internal Rate of Return) as percentage.
+            Positive (green) for gain; negative (red) for loss.
+            Calculated excluding Stamp Duty/STT paid transactions.
+            Rounded to 2 decimal places (e.g., 12.54 for 12.54%).
+          examples:
+            - 12.54
+            - -3.21
+        summaryMetrics:
+          $ref: '#/components/schemas/SummaryMetrics'
+        transactions:
+          type: array
+          description: |
+            Array of transaction records in file order (unsorted).
+            Populated from parsed Excel file after validation.
+          items:
+            $ref: '#/components/schemas/Transaction'
+          minItems: 2
+          maxItems: 10000
+          examples:
+            - - date: "01-Jan-2020"
+                transactionType: "BUY"
+                amount: 100000.00
+                units: 10000.000
+                price: 10.00
+                unitBalance: 10000.000
+              - date: "15-Jan-2021"
+                transactionType: "SELL"
+                amount: 118100.00
+                units: 10000.000
+                price: null
+                unitBalance: 0.000
+      required:
+        - success
+        - xirr
+        - summaryMetrics
+        - transactions
+    
+    Error:
+      type: object
+      description: Error details object
+      properties:
+        message:
+          type: string
+          description: High-level error message (e.g., "File validation failed", "Invalid file format")
+          examples:
+            - "File validation failed"
+            - "Invalid file format"
+            - "File too large"
+        details:
+          type: string
+          description: |
+            Detailed, actionable error message explaining what went wrong and how to fix it.
+            Includes row numbers, column names, actual vs. expected values.
+          examples:
+            - "Row 5: Date column contains invalid format '01-01-2020' (expected DD-MMM-YYYY, e.g., 15-Jan-2020)"
+            - "Missing required column: 'Amount'. Columns found: Date, Transaction Type, Units"
+            - "File size is 15.2 MB, but maximum allowed is 10 MB"
+      required:
+        - message
+        - details
+    
+    ErrorResponse:
+      type: object
+      description: Error response from any endpoint
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+          description: Indicates request failed
+          examples:
+            - false
+        error:
+          $ref: '#/components/schemas/Error'
+      required:
+        - success
+        - error
+  
+  securitySchemes:
+    openIdConnect:
+      type: openIdConnect
+      openIdConnectUrl: https://auth.example.com/.well-known/openid-configuration
+      description: |
+        OpenID Connect authentication (optional, reserved for future use).
+        Current MVP does not require authentication (stateless, no user accounts).
+  
+  headers:
+    X-RateLimit-Limit:
+      schema:
+        type: integer
+      description: The number of requests allowed per hour (reserved for future use)
+    X-RateLimit-Remaining:
+      schema:
+        type: integer
+      description: Number of requests remaining in the current window (reserved for future use)
+    X-RateLimit-Reset:
+      schema:
+        type: integer
+      description: Unix timestamp when rate limit resets (reserved for future use)
+
+security: []
+
+x-google-allow: all
