@@ -36,9 +36,9 @@
 
 ## Phase 3 — Backend: Models
 
-- [ ] T020 [P1] [Phase 3] [Deps: T012] Pydantic Transaction model (6 fields, conditional optionals) | backend/app/models/transaction.py
-- [ ] T021 [P1] [Phase 3] [Deps: T020] Pydantic UploadResponse + SummaryMetrics models | backend/app/models/response.py
-- [ ] T022 [P1] [Phase 3] [Deps: None] Pydantic ErrorDetail model | backend/app/models/error.py
+- [x] T020 [P1] [Phase 3] [Deps: T012] Pydantic Transaction model (6 fields, conditional optionals) | backend/app/models/transaction.py
+- [x] T021 [P1] [Phase 3] [Deps: T020] Pydantic UploadResponse + SummaryMetrics models | backend/app/models/response.py
+- [x] T022 [P1] [Phase 3] [Deps: None] Pydantic ErrorDetail model | backend/app/models/error.py
 
 ---
 
@@ -144,7 +144,7 @@
 |---|---|---|
 | Phase 1 — Foundation & Setup | T001–T011 | ✅ Complete |
 | Phase 2 — Backend Utils & Exceptions | T012–T019 | ✅ Complete |
-| Phase 3 — Backend Models | T020–T022 | ⏳ Pending |
+| Phase 3 — Backend Models | T020–T022 | ✅ Complete |
 | Phase 4 — Backend Services | T023–T026 | ⏳ Pending |
 | Phase 5 — Backend API + main.py | T027–T029 | ⏳ Pending |
 | Phase 6 — Backend Tests | T030–T036 | ⏳ Pending |
