@@ -251,3 +251,9 @@ DECIMAL_PLACES_XIRR: int = 2
 
 # Tolerance for unit balance consistency check (floating-point rounding)
 UNIT_BALANCE_TOLERANCE: float = 0.005
+
+# ============================================================
+# File-level limits (mirrors config.py — single source for services)
+# ============================================================
+MAX_TRANSACTIONS: int = 10_000
+MIN_TRANSACTIONS: int = 2

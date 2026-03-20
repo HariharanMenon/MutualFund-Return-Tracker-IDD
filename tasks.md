@@ -44,10 +44,10 @@
 
 ## Phase 4 — Backend: Services
 
-- [ ] T023 [P1] [Phase 4] [Deps: T017] Excel file loader — first sheet only, returns raw list of dicts | backend/app/services/file_parser.py
-- [ ] T024 [P1] [Phase 4] [Deps: T014,T015,T016,T020] Full validation engine — column, row, file-level; all 15 error rules | backend/app/services/validator.py
-- [ ] T025 [P1] [Phase 4] [Deps: T014,T015,T020] Transaction normalizer service — types, dates, decimal rounding | backend/app/services/transaction_processor.py
-- [ ] T026 [P1] [Phase 4] [Deps: T018,T020,T021] XIRR cash flow builder + numpy_financial call + summary metrics | backend/app/services/xirr_calculator.py
+- [x] T023 [P1] [Phase 4] [Deps: T017] Excel file loader — first sheet only, returns raw list of dicts | backend/app/services/file_parser.py
+- [x] T024 [P1] [Phase 4] [Deps: T014,T015,T016,T020] Full validation engine — column, row, file-level; all 15 error rules | backend/app/services/validator.py
+- [x] T025 [P1] [Phase 4] [Deps: T014,T015,T020] Transaction normalizer service — types, dates, decimal rounding | backend/app/services/transaction_processor.py
+- [x] T026 [P1] [Phase 4] [Deps: T018,T020,T021] XIRR cash flow builder + numpy_financial call + summary metrics | backend/app/services/xirr_calculator.py
 
 ---
 
@@ -145,7 +145,7 @@
 | Phase 1 — Foundation & Setup | T001–T011 | ✅ Complete |
 | Phase 2 — Backend Utils & Exceptions | T012–T019 | ✅ Complete |
 | Phase 3 — Backend Models | T020–T022 | ✅ Complete |
-| Phase 4 — Backend Services | T023–T026 | ⏳ Pending |
+| Phase 4 — Backend Services | T023–T026 | ✅ Complete |
 | Phase 5 — Backend API + main.py | T027–T029 | ⏳ Pending |
 | Phase 6 — Backend Tests | T030–T036 | ⏳ Pending |
 | Phase 7 — Frontend Styles | T037–T040 | ⏳ Pending |
