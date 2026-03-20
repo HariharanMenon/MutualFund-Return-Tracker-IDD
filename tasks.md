@@ -105,11 +105,11 @@
 
 ## Phase 10 — Frontend: Hooks + App Entry Point
 
-- [ ] T054 [P2] [Phase 10] [Deps: T046] useApi — fetch wrapper, network error handling, response parsing | frontend/src/hooks/useApi.js
-- [ ] T055 [P2] [Phase 10] [Deps: T054,T045] useFileUpload — state machine (idle→loading→skeleton→result/error) | frontend/src/hooks/useFileUpload.js
-- [ ] T056 [P2] [Phase 10] [Deps: T054] useXirrCalculation — XIRR + transactions + summaryMetrics state | frontend/src/hooks/useXirrCalculation.js
-- [ ] T057 [P2] [Phase 10] [Deps: T047,T048,T049,T050,T051,T052,T053,T055,T056] App.jsx root — all state wiring, layout | frontend/src/App.jsx, App.css
-- [ ] T058 [P2] [Phase 10] [Deps: T057] main.jsx — React entry point, mount to #root | frontend/src/main.jsx
+- [x] T054 [P2] [Phase 10] [Deps: T046] useApi — fetch wrapper, network error handling, response parsing | frontend/src/hooks/useApi.js
+- [x] T055 [P2] [Phase 10] [Deps: T054,T045] useFileUpload — state machine (idle→loading→skeleton→result/error) | frontend/src/hooks/useFileUpload.js
+- [x] T056 [P2] [Phase 10] [Deps: T054] useXirrCalculation — XIRR + transactions + summaryMetrics state | frontend/src/hooks/useXirrCalculation.js
+- [x] T057 [P2] [Phase 10] [Deps: T047,T048,T049,T050,T051,T052,T053,T055,T056] App.jsx root — all state wiring, layout | frontend/src/App.jsx, App.css
+- [x] T058 [P2] [Phase 10] [Deps: T057] main.jsx — React entry point, mount to #root | frontend/src/main.jsx
 
 ---
 
@@ -151,6 +151,6 @@
 | Phase 7 — Frontend Styles | T037–T040 | ✅ Complete |
 | Phase 8 — Frontend Utils & Services | T041–T046 | ✅ Complete |
 | Phase 9 — Frontend Components | T047–T053 | ✅ Complete |
-| Phase 10 — Frontend Hooks + App | T054–T058 | ⏳ Pending |
+| Phase 10 — Frontend Hooks + App | T054–T058 | ✅ Complete |
 | Phase 11 — Frontend Tests | T059–T068 | ⏳ Pending |
 | Phase 12 — Infrastructure & CI | T069–T073 | ⏳ Pending |
