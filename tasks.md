@@ -93,13 +93,13 @@
 
 ## Phase 9 — Frontend: Components
 
-- [ ] T047 [P2] [Phase 9] [Deps: T037,T038] ErrorBanner — red banner, message, details, Try Again button | frontend/src/components/ErrorBanner.jsx, ErrorBanner.css
-- [ ] T048 [P2] [Phase 9] [Deps: T037,T038] LoadingSpinner — "Processing file..." animated spinner | frontend/src/components/LoadingSpinner.jsx, LoadingSpinner.css
-- [ ] T049 [P2] [Phase 9] [Deps: T037,T038,T039] SkeletonLoader — 6-col, ~8 rows, shimmer animation | frontend/src/components/SkeletonLoader.jsx, SkeletonLoader.css
-- [ ] T050 [P2] [Phase 9] [Deps: T037,T044] XirrDisplay — 36px+ percentage, green/red, ↑↓ indicator | frontend/src/components/XirrDisplay.jsx, XirrDisplay.css
-- [ ] T051 [P2] [Phase 9] [Deps: T037,T044] SummaryMetrics — Total Invested, Final Proceeds, Profit/Loss | frontend/src/components/SummaryMetrics.jsx, SummaryMetrics.css
-- [ ] T052 [P2] [Phase 9] [Deps: T037,T039,T044] TransactionGrid — 6-col table, file order, "—" for nulls, row striping | frontend/src/components/TransactionGrid.jsx, TransactionGrid.css
-- [ ] T053 [P2] [Phase 9] [Deps: T037,T044,T045] UploadArea — drag-and-drop, file picker, size+type validation, disabled during upload | frontend/src/components/UploadArea.jsx, UploadArea.css
+- [x] T047 [P2] [Phase 9] [Deps: T037,T038] ErrorBanner — red banner, message, details, Try Again button | frontend/src/components/ErrorBanner.jsx, ErrorBanner.css
+- [x] T048 [P2] [Phase 9] [Deps: T037,T038] LoadingSpinner — "Processing file..." animated spinner | frontend/src/components/LoadingSpinner.jsx, LoadingSpinner.css
+- [x] T049 [P2] [Phase 9] [Deps: T037,T038,T039] SkeletonLoader — 6-col, ~8 rows, shimmer animation | frontend/src/components/SkeletonLoader.jsx, SkeletonLoader.css
+- [x] T050 [P2] [Phase 9] [Deps: T037,T044] XirrDisplay — 36px+ percentage, green/red, ↑↓ indicator | frontend/src/components/XirrDisplay.jsx, XirrDisplay.css
+- [x] T051 [P2] [Phase 9] [Deps: T037,T044] SummaryMetrics — Total Invested, Final Proceeds, Profit/Loss | frontend/src/components/SummaryMetrics.jsx, SummaryMetrics.css
+- [x] T052 [P2] [Phase 9] [Deps: T037,T039,T044] TransactionGrid — 6-col table, file order, "—" for nulls, row striping | frontend/src/components/TransactionGrid.jsx, TransactionGrid.css
+- [x] T053 [P2] [Phase 9] [Deps: T037,T044,T045] UploadArea — drag-and-drop, file picker, size+type validation, disabled during upload | frontend/src/components/UploadArea.jsx, UploadArea.css
 
 ---
 
@@ -150,7 +150,7 @@
 | Phase 6 — Backend Tests | T030–T036 | ✅ Complete |
 | Phase 7 — Frontend Styles | T037–T040 | ✅ Complete |
 | Phase 8 — Frontend Utils & Services | T041–T046 | ✅ Complete |
-| Phase 9 — Frontend Components | T047–T053 | ⏳ Pending |
+| Phase 9 — Frontend Components | T047–T053 | ✅ Complete |
 | Phase 10 — Frontend Hooks + App | T054–T058 | ⏳ Pending |
 | Phase 11 — Frontend Tests | T059–T068 | ⏳ Pending |
 | Phase 12 — Infrastructure & CI | T069–T073 | ⏳ Pending |

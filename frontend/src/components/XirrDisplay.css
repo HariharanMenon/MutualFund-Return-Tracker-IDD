@@ -1,0 +1,53 @@
+.xirr-display {
+  padding: var(--spacing-5) var(--spacing-6);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+  min-width: 160px;
+  animation: fadeIn 400ms ease both;
+}
+
+.xirr-display__label {
+  margin: 0 0 var(--spacing-1) 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-secondary);
+}
+
+/* spec §4.2: at least 36px — font-size-2xl = 36px */
+.xirr-display__value {
+  margin: 0 0 var(--spacing-1) 0;
+  font-size: var(--font-size-2xl);   /* See also responsive.css for ≥640px override */
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+}
+
+.xirr-display__indicator {
+  margin-right: var(--spacing-1);
+}
+
+.xirr-display__subtext {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+/* Colour modifiers */
+.xirr-display--positive .xirr-display__value {
+  color: var(--color-success);
+}
+
+.xirr-display--negative .xirr-display__value {
+  color: var(--color-error);
+}
+
+.xirr-display--positive {
+  border-top: 3px solid var(--color-success);
+}
+
+.xirr-display--negative {
+  border-top: 3px solid var(--color-error);
+}

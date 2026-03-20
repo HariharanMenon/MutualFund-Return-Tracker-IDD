@@ -1,0 +1,28 @@
+.transaction-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.transaction-table-wrapper {
+  overflow-x: auto;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+}
+
+/* Column width proportions — matches grid.css definitions.
+   TransactionGrid uses its own colgroup without explicit widths to keep
+   the CSS the single source of truth; grid.css targets .transaction-table. */
+
+.col-numeric {
+  text-align: right;
+}
+
+.transaction-grid__count {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  text-align: right;
+}

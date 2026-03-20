@@ -1,0 +1,36 @@
+.summary-metrics {
+  animation: fadeIn 400ms ease both;
+}
+
+.metric-card {
+  padding: var(--spacing-4) var(--spacing-5);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+}
+
+.metric-card__label {
+  margin: 0 0 var(--spacing-1) 0;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--color-text-secondary);
+}
+
+.metric-card__value {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  line-height: var(--line-height-tight);
+}
+
+.metric-card__value--positive {
+  color: var(--color-success);
+}
+
+.metric-card__value--negative {
+  color: var(--color-error);
+}
