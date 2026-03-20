@@ -73,10 +73,10 @@
 
 ## Phase 7 — Frontend: Styles
 
-- [ ] T037 [P2] [Phase 7] [Deps: T007] CSS custom properties — colors, spacing, font sizes | frontend/src/styles/variables.css
-- [ ] T038 [P2] [Phase 7] [Deps: T037] Shimmer + spinner keyframe animations | frontend/src/styles/animations.css
-- [ ] T039 [P2] [Phase 7] [Deps: T037] 6-column grid layout — proportional widths, row striping | frontend/src/styles/grid.css
-- [ ] T040 [P2] [Phase 7] [Deps: T037] Responsive media queries — mobile/tablet/desktop | frontend/src/styles/responsive.css
+- [x] T037 [P2] [Phase 7] [Deps: T007] CSS custom properties — colors, spacing, font sizes | frontend/src/styles/variables.css
+- [x] T038 [P2] [Phase 7] [Deps: T037] Shimmer + spinner keyframe animations | frontend/src/styles/animations.css
+- [x] T039 [P2] [Phase 7] [Deps: T037] 6-column grid layout — proportional widths, row striping | frontend/src/styles/grid.css
+- [x] T040 [P2] [Phase 7] [Deps: T037] Responsive media queries — mobile/tablet/desktop | frontend/src/styles/responsive.css
 
 ---
 

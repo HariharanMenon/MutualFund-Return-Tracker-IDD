@@ -1,0 +1,72 @@
+/* animations.css — CSS keyframe animations.
+   Shimmer: skeleton loader rows (GPU-accelerated via transform/opacity).
+   Spin:    loading spinner rotation.
+   FadeIn:  result panel entrance.
+   Spec: product-structure.md §Styles §animations.css
+   Spec §15: "Use CSS shimmer (pure CSS animation) — ~2KB overhead, GPU-accelerated 60fps"
+*/
+
+/* ---------------------------------------------------------- */
+/* Shimmer — skeleton placeholder animation                    */
+/* ---------------------------------------------------------- */
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position:  1000px 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-base)  25%,
+    var(--skeleton-shine) 50%,
+    var(--skeleton-base)  75%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer var(--skeleton-duration) infinite linear;
+}
+
+/* ---------------------------------------------------------- */
+/* Spin — upload loading spinner                               */
+/* ---------------------------------------------------------- */
+
+@keyframes spin {
+  0%   { transform: rotate(0deg);   }
+  100% { transform: rotate(360deg); }
+}
+
+.spinner-rotate {
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+  will-change: transform;
+}
+
+/* ---------------------------------------------------------- */
+/* Fade in — used when results arrive after skeleton           */
+/* ---------------------------------------------------------- */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+.fade-in {
+  animation: fadeIn var(--transition-normal) ease forwards;
+}
+
+/* ---------------------------------------------------------- */
+/* Pulse — subtle alive indicator on the skeleton rows        */
+/* ---------------------------------------------------------- */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1;   }
+  50%       { opacity: 0.5; }
+}
+
+.skeleton-pulse {
+  animation: pulse 1.8s ease-in-out infinite;
+}
