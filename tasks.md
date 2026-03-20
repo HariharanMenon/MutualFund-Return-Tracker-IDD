@@ -82,12 +82,12 @@
 
 ## Phase 8 — Frontend: Utils & Services
 
-- [ ] T041 [P2] [Phase 8] [Deps: T007] Frontend constants — API URL, file limits, column names | frontend/src/utils/constants.js
-- [ ] T042 [P2] [Phase 8] [Deps: T041] Shared utility helpers | frontend/src/utils/helpers.js
-- [ ] T043 [P2] [Phase 8] [Deps: None] Simple console logger | frontend/src/utils/logger.js
-- [ ] T044 [P2] [Phase 8] [Deps: T041] Formatters — formatCurrency, formatDate, formatPercentage, formatUnits | frontend/src/services/formatting.js
-- [ ] T045 [P2] [Phase 8] [Deps: T041] Frontend validators — isValidFileSize, isValidFileType | frontend/src/services/validation.js
-- [ ] T046 [P2] [Phase 8] [Deps: T041,T043] API client — uploadFile() fetch wrapper with error handling | frontend/src/services/api.js
+- [x] T041 [P2] [Phase 8] [Deps: T007] Frontend constants — API URL, file limits, column names | frontend/src/utils/constants.js
+- [x] T042 [P2] [Phase 8] [Deps: T041] Shared utility helpers | frontend/src/utils/helpers.js
+- [x] T043 [P2] [Phase 8] [Deps: None] Simple console logger | frontend/src/utils/logger.js
+- [x] T044 [P2] [Phase 8] [Deps: T041] Formatters — formatCurrency, formatDate, formatPercentage, formatUnits | frontend/src/services/formatting.js
+- [x] T045 [P2] [Phase 8] [Deps: T041] Frontend validators — isValidFileSize, isValidFileType | frontend/src/services/validation.js
+- [x] T046 [P2] [Phase 8] [Deps: T041,T043] API client — uploadFile() fetch wrapper with error handling | frontend/src/services/api.js
 
 ---
 
@@ -148,8 +148,8 @@
 | Phase 4 — Backend Services | T023–T026 | ✅ Complete |
 | Phase 5 — Backend API + main.py | T027–T029 | ✅ Complete |
 | Phase 6 — Backend Tests | T030–T036 | ✅ Complete |
-| Phase 7 — Frontend Styles | T037–T040 | ⏳ Pending |
-| Phase 8 — Frontend Utils & Services | T041–T046 | ⏳ Pending |
+| Phase 7 — Frontend Styles | T037–T040 | ✅ Complete |
+| Phase 8 — Frontend Utils & Services | T041–T046 | ✅ Complete |
 | Phase 9 — Frontend Components | T047–T053 | ⏳ Pending |
 | Phase 10 — Frontend Hooks + App | T054–T058 | ⏳ Pending |
 | Phase 11 — Frontend Tests | T059–T068 | ⏳ Pending |
