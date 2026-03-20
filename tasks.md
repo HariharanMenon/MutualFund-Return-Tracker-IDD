@@ -23,14 +23,14 @@
 
 ## Phase 2 — Backend: Utils & Exceptions
 
-- [ ] T012 [P1] [Phase 2] [Deps: T004] Transaction type sets, error message templates, column name constants | backend/app/utils/constants.py
-- [ ] T013 [P1] [Phase 2] [Deps: None] Structured logging utility | backend/app/utils/logger.py
-- [ ] T014 [P1] [Phase 2] [Deps: T004] DD-MMM-YYYY date parser + 1960–today range validation | backend/app/utils/date_parser.py
-- [ ] T015 [P1] [Phase 2] [Deps: T012] Transaction type normalizer (all spec variants → canonical form) | backend/app/utils/transaction_normalizer.py
-- [ ] T016 [P1] [Phase 2] [Deps: None] FileValidationError custom exception | backend/app/exceptions/validation_error.py
-- [ ] T017 [P1] [Phase 2] [Deps: None] FileProcessingError custom exception | backend/app/exceptions/file_error.py
-- [ ] T018 [P1] [Phase 2] [Deps: None] XirrCalculationError custom exception | backend/app/exceptions/calculation_error.py
-- [ ] T019 [P1] [Phase 2] [Deps: T016,T017,T018] exceptions/__init__.py re-exports | backend/app/exceptions/__init__.py
+- [x] T012 [P1] [Phase 2] [Deps: T004] Transaction type sets, error message templates, column name constants | backend/app/utils/constants.py
+- [x] T013 [P1] [Phase 2] [Deps: None] Structured logging utility | backend/app/utils/logger.py
+- [x] T014 [P1] [Phase 2] [Deps: T004] DD-MMM-YYYY date parser + 1960–today range validation | backend/app/utils/date_parser.py
+- [x] T015 [P1] [Phase 2] [Deps: T012] Transaction type normalizer (all spec variants → canonical form) | backend/app/utils/transaction_normalizer.py
+- [x] T016 [P1] [Phase 2] [Deps: None] FileValidationError custom exception | backend/app/exceptions/validation_error.py
+- [x] T017 [P1] [Phase 2] [Deps: None] FileProcessingError custom exception | backend/app/exceptions/file_error.py
+- [x] T018 [P1] [Phase 2] [Deps: None] XirrCalculationError custom exception | backend/app/exceptions/calculation_error.py
+- [x] T019 [P1] [Phase 2] [Deps: T016,T017,T018] exceptions/__init__.py re-exports | backend/app/exceptions/__init__.py
 
 ---
 
@@ -143,7 +143,7 @@
 | Phase | Tasks | Status |
 |---|---|---|
 | Phase 1 — Foundation & Setup | T001–T011 | ✅ Complete |
-| Phase 2 — Backend Utils & Exceptions | T012–T019 | ⏳ Pending |
+| Phase 2 — Backend Utils & Exceptions | T012–T019 | ✅ Complete |
 | Phase 3 — Backend Models | T020–T022 | ⏳ Pending |
 | Phase 4 — Backend Services | T023–T026 | ⏳ Pending |
 | Phase 5 — Backend API + main.py | T027–T029 | ⏳ Pending |
