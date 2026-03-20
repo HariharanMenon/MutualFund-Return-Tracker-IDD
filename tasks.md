@@ -61,13 +61,13 @@
 
 ## Phase 6 — Backend: Tests
 
-- [ ] T030 [P1] [Phase 6] [Deps: T029] pytest fixtures — TestClient, temp xlsx factory | backend/tests/conftest.py
-- [ ] T031 [P1] [Phase 6] [Deps: T030] Test data generator + 6 sample .xlsx fixture files | backend/tests/fixtures/test_data.py, backend/tests/fixtures/*.xlsx
-- [ ] T032 [P1] [Phase 6] [Deps: T030,T031] Unit tests — Excel loading, first-sheet-only, corrupt file handling | backend/tests/test_file_parser.py
-- [ ] T033 [P1] [Phase 6] [Deps: T030,T031] Unit tests — all 15 validation rules | backend/tests/test_validator.py
-- [ ] T034 [P1] [Phase 6] [Deps: T030,T031] Unit tests — XIRR accuracy, Stamp Duty exclusion, convergence failure | backend/tests/test_xirr_calculator.py
-- [ ] T035 [P1] [Phase 6] [Deps: T030] Unit tests — all transaction type variant normalizations | backend/tests/test_transaction_normalizer.py
-- [ ] T036 [P1] [Phase 6] [Deps: T030,T031] Integration tests — /api/upload happy path + all error scenarios | backend/tests/test_routes_upload.py
+- [x] T030 [P1] [Phase 6] [Deps: T029] pytest fixtures — TestClient, temp xlsx factory | backend/tests/conftest.py
+- [x] T031 [P1] [Phase 6] [Deps: T030] Test data generator + 6 sample .xlsx fixture files | backend/tests/fixtures/test_data.py, backend/tests/fixtures/*.xlsx
+- [x] T032 [P1] [Phase 6] [Deps: T030,T031] Unit tests — Excel loading, first-sheet-only, corrupt file handling | backend/tests/test_file_parser.py
+- [x] T033 [P1] [Phase 6] [Deps: T030,T031] Unit tests — all 15 validation rules | backend/tests/test_validator.py
+- [x] T034 [P1] [Phase 6] [Deps: T030,T031] Unit tests — XIRR accuracy, Stamp Duty exclusion, convergence failure | backend/tests/test_xirr_calculator.py
+- [x] T035 [P1] [Phase 6] [Deps: T030] Unit tests — all transaction type variant normalizations | backend/tests/test_transaction_normalizer.py
+- [x] T036 [P1] [Phase 6] [Deps: T030,T031] Integration tests — /api/upload happy path + all error scenarios | backend/tests/test_routes_upload.py
 
 ---
 
@@ -147,7 +147,7 @@
 | Phase 3 — Backend Models | T020–T022 | ✅ Complete |
 | Phase 4 — Backend Services | T023–T026 | ✅ Complete |
 | Phase 5 — Backend API + main.py | T027–T029 | ✅ Complete |
-| Phase 6 — Backend Tests | T030–T036 | ⏳ Pending |
+| Phase 6 — Backend Tests | T030–T036 | ✅ Complete |
 | Phase 7 — Frontend Styles | T037–T040 | ⏳ Pending |
 | Phase 8 — Frontend Utils & Services | T041–T046 | ⏳ Pending |
 | Phase 9 — Frontend Components | T047–T053 | ⏳ Pending |
