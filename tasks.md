@@ -53,9 +53,9 @@
 
 ## Phase 5 — Backend: API Route + Entry Point
 
-- [ ] T027 [P1] [Phase 5] [Deps: T023,T024,T025,T026] POST /api/upload route — orchestrate services, return typed responses | backend/app/api/routes/upload.py
-- [ ] T028 [P1] [Phase 5] [Deps: T027] API __init__.py files + router registration | backend/app/api/__init__.py, backend/app/api/routes/__init__.py
-- [ ] T029 [P1] [Phase 5] [Deps: T028] FastAPI app init — CORS, middleware, router inclusion, health check | backend/main.py
+- [x] T027 [P1] [Phase 5] [Deps: T023,T024,T025,T026] POST /api/upload route — orchestrate services, return typed responses | backend/app/api/routes/upload.py
+- [x] T028 [P1] [Phase 5] [Deps: T027] API __init__.py files + router registration | backend/app/api/__init__.py, backend/app/api/routes/__init__.py
+- [x] T029 [P1] [Phase 5] [Deps: T028] FastAPI app init — CORS, middleware, router inclusion, health check | backend/main.py
 
 ---
 
@@ -146,7 +146,7 @@
 | Phase 2 — Backend Utils & Exceptions | T012–T019 | ✅ Complete |
 | Phase 3 — Backend Models | T020–T022 | ✅ Complete |
 | Phase 4 — Backend Services | T023–T026 | ✅ Complete |
-| Phase 5 — Backend API + main.py | T027–T029 | ⏳ Pending |
+| Phase 5 — Backend API + main.py | T027–T029 | ✅ Complete |
 | Phase 6 — Backend Tests | T030–T036 | ⏳ Pending |
 | Phase 7 — Frontend Styles | T037–T040 | ⏳ Pending |
 | Phase 8 — Frontend Utils & Services | T041–T046 | ⏳ Pending |
