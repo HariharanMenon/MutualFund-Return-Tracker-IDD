@@ -115,16 +115,16 @@
 
 ## Phase 11 — Frontend: Tests
 
-- [ ] T059 [P2] [Phase 11] [Deps: T007,T008] Vitest global setup + testing-library config | frontend/tests/setup.js
-- [ ] T060 [P2] [Phase 11] [Deps: T044,T059] Unit tests — formatCurrency, formatDate, formatPercentage, formatUnits | frontend/tests/services/formatting.test.js
-- [ ] T061 [P2] [Phase 11] [Deps: T046,T059] Unit tests — uploadFile fetch mock | frontend/tests/services/api.test.js
-- [ ] T062 [P2] [Phase 11] [Deps: T055,T059] Hook tests — state transitions, frontend validation logic | frontend/tests/hooks/useFileUpload.test.js
-- [ ] T063 [P2] [Phase 11] [Deps: T054,T059] Hook tests — network error handling | frontend/tests/hooks/useApi.test.js
-- [ ] T064 [P2] [Phase 11] [Deps: T053,T059] Component tests — drag-drop, file type rejection, disabled state | frontend/tests/components/UploadArea.test.jsx
-- [ ] T065 [P2] [Phase 11] [Deps: T050,T059] Component tests — positive green, negative red, format | frontend/tests/components/XirrDisplay.test.jsx
-- [ ] T066 [P2] [Phase 11] [Deps: T051,T059] Component tests — three metrics, profit/loss coloring | frontend/tests/components/SummaryMetrics.test.jsx
-- [ ] T067 [P2] [Phase 11] [Deps: T052,T059] Component tests — columns, null display, row order | frontend/tests/components/TransactionGrid.test.jsx
-- [ ] T068 [P2] [Phase 11] [Deps: T047,T059] Component tests — error message display, retry button | frontend/tests/components/ErrorBanner.test.jsx
+- [x] T059 [P2] [Phase 11] [Deps: T007,T008] Vitest global setup + testing-library config | frontend/tests/setup.js
+- [x] T060 [P2] [Phase 11] [Deps: T044,T059] Unit tests — formatCurrency, formatDate, formatPercentage, formatUnits | frontend/tests/services/formatting.test.js
+- [x] T061 [P2] [Phase 11] [Deps: T046,T059] Unit tests — uploadFile fetch mock | frontend/tests/services/api.test.js
+- [x] T062 [P2] [Phase 11] [Deps: T055,T059] Hook tests — state transitions, frontend validation logic | frontend/tests/hooks/useFileUpload.test.js
+- [x] T063 [P2] [Phase 11] [Deps: T054,T059] Hook tests — network error handling | frontend/tests/hooks/useApi.test.js
+- [x] T064 [P2] [Phase 11] [Deps: T053,T059] Component tests — drag-drop, file type rejection, disabled state | frontend/tests/components/UploadArea.test.jsx
+- [x] T065 [P2] [Phase 11] [Deps: T050,T059] Component tests — positive green, negative red, format | frontend/tests/components/XirrDisplay.test.jsx
+- [x] T066 [P2] [Phase 11] [Deps: T051,T059] Component tests — three metrics, profit/loss coloring | frontend/tests/components/SummaryMetrics.test.jsx
+- [x] T067 [P2] [Phase 11] [Deps: T052,T059] Component tests — columns, null display, row order | frontend/tests/components/TransactionGrid.test.jsx
+- [x] T068 [P2] [Phase 11] [Deps: T047,T059] Component tests — error message display, retry button | frontend/tests/components/ErrorBanner.test.jsx
 
 ---
 
@@ -152,5 +152,5 @@
 | Phase 8 — Frontend Utils & Services | T041–T046 | ✅ Complete |
 | Phase 9 — Frontend Components | T047–T053 | ✅ Complete |
 | Phase 10 — Frontend Hooks + App | T054–T058 | ✅ Complete |
-| Phase 11 — Frontend Tests | T059–T068 | ⏳ Pending |
+| Phase 11 — Frontend Tests | T059–T068 | ✅ Complete |
 | Phase 12 — Infrastructure & CI | T069–T073 | ⏳ Pending |
