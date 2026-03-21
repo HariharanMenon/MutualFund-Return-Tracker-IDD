@@ -2,6 +2,7 @@
 
 **Version:** 1.0  
 **Date:** March 19, 2026  
+**Last Updated:** March 21, 2026
 **Context:** Stateless, in-memory file processing on Render free tier (single instance, cold-start delays acceptable)
 
 ---
@@ -196,7 +197,7 @@ MutualFund-Return-Tracker-IDD/
 
 | File | Purpose |
 |------|---------|
-| `README.md` | Guide to intent folder contents, versioning, update process |
+| `Intent_README.md` | Guide to intent folder contents, versioning, update process |
 | `mutual-fund-xirr-tracker-feature.md` | Complete feature specification (v1.0 with all clarifications) |
 | `product-structure.md` | This file: Product architecture, folder layout, deployment notes |
 
@@ -241,13 +242,28 @@ REQUIRED_COLUMNS = ["date", "transaction type", "amount", "units", "price", "uni
 
 **`requirements.txt`** – Dependencies (Render installs from this)
 ```
-fastapi==0.104.1
-uvicorn==0.24.0
-openpyxl==3.11.0
-pandas==2.1.0
-numpy_financial==1.0.0  # or pyxirr==0.10.x
-pydantic==2.5.0
-python-multipart==0.0.6
+# Web framework (async HTTP server)
+fastapi==0.109.2
+uvicorn==0.27.0
+
+# File upload support
+python-multipart==0.0.7
+
+# Excel parsing and data processing
+openpyxl==3.1.3
+pandas==2.3.1
+
+# Financial calculation engine
+numpy_financial==1.0.0
+
+# Data validation and serialization
+pydantic==2.6.4
+pydantic-settings==2.2.1
+
+# Testing Dependencies (Development Only)
+pytest==8.2.0
+pytest-asyncio==0.24.0
+httpx==0.27.0
 ```
 
 **`Procfile`** (Optional, for Render clarity)
@@ -575,79 +591,419 @@ This document should include:
 
 ### **Scripts** (`/scripts/`)
 
+#### **For Unix/Linux/macOS**
+
 **`setup.sh`** – One-command setup
 ```bash
 #!/bin/bash
-# Create Python venv
-python3 -m venv backend/venv
 
-# Activate + install backend deps
-source backend/venv/bin/activate
-pip install -r backend/requirements.txt
+# MutualFund-Return-Tracker-IDD Setup Script
+# Platform: Unix/Linux/macOS
+# Purpose: One-command setup for development environment
 
-# Install frontend deps
-cd frontend && npm install && cd ..
+set -e  # Exit immediately if any command fails
 
-echo "Setup complete! Run ./scripts/start-dev.sh to start"
+# Color codes for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+echo ""
+echo -e "${BLUE}========================================${NC}"
+echo -e "${BLUE}MutualFund-Return-Tracker-IDD Setup${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo ""
+
+# ============================================
+# Step 1: Check Prerequisites
+# ============================================
+echo -e "${YELLOW}Step 1: Checking prerequisites...${NC}"
+
+if ! command -v python3 &> /dev/null; then
+    echo -e "${RED}❌ Error: python3 not found${NC}"
+    echo "Please install Python 3.9 or higher"
+    exit 1
+fi
+
+if ! command -v npm &> /dev/null; then
+    echo -e "${RED}❌ Error: npm not found${NC}"
+    echo "Please install Node.js and npm"
+    exit 1
+fi
+
+echo -e "${GREEN}✓ Python 3 and npm found${NC}"
+echo ""
+
+# ============================================
+# Step 2: Create Python Virtual Environment
+# ============================================
+echo -e "${YELLOW}Step 2: Creating Python virtual environment...${NC}"
+
+if [ -d ".venv" ]; then
+    echo "Virtual environment already exists at .venv"
+else
+    python3 -m venv .venv || { echo -e "${RED}❌ Failed${NC}"; exit 1; }
+    echo -e "${GREEN}✓ Virtual environment created at .venv${NC}"
+fi
+
+# ============================================
+# Step 3: Install Backend Dependencies
+# ============================================
+echo -e "${YELLOW}Step 3: Installing backend dependencies...${NC}"
+
+source .venv/bin/activate || { echo -e "${RED}❌ Failed to activate venv${NC}"; exit 1; }
+
+pip install --upgrade pip > /dev/null 2>&1
+pip install -r ./backend/requirements.txt || { echo -e "${RED}❌ Failed${NC}"; exit 1; }
+echo -e "${GREEN}✓ Backend dependencies installed${NC}"
+echo ""
+
+# ============================================
+# Step 4: Install Frontend Dependencies
+# ============================================
+echo -e "${YELLOW}Step 4: Installing frontend dependencies...${NC}"
+
+cd frontend && npm install && cd .. || { echo -e "${RED}❌ Failed${NC}"; exit 1; }
+echo -e "${GREEN}✓ Frontend dependencies installed${NC}"
+echo ""
+
+# ============================================
+# Setup Complete
+# ============================================
+echo -e "${GREEN}========================================${NC}"
+echo -e "${GREEN}✅ Setup Complete!${NC}"
+echo -e "${GREEN}========================================${NC}"
+echo ""
+echo "Next steps:"
+echo "1. Activate venv: source .venv/bin/activate"
+echo "2. Start servers: ./scripts/start-dev.sh"
+echo "3. Backend API: http://localhost:8000/docs"
+echo "4. Frontend: http://localhost:5173"
+echo ""
 ```
 
 **`start-dev.sh`** – Start both servers
 ```bash
 #!/bin/bash
-# Start backend (Terminal 1)
-cd backend
-source venv/bin/activate
-uvicorn main:app --reload &
 
-# Start frontend (Terminal 2)
+# MutualFund-Return-Tracker-IDD Development Servers
+# Platform: Unix/Linux/macOS
+# Purpose: Start both backend (FastAPI) and frontend (React) servers
+
+set -e
+
+echo "Checking virtual environment..."
+[ -d ".venv" ] || { echo "Error: Run ./scripts/setup.sh first"; exit 1; }
+
+echo "Activating virtual environment..."
+source .venv/bin/activate || { echo "Error: Failed to activate venv"; exit 1; }
+
+echo "Starting backend server on http://localhost:8000..."
+cd backend
+uvicorn main:app --reload --host 127.0.0.1 --port 8000 &
+BACKEND_PID=$!
+cd ..
+
+echo "Starting frontend server on http://localhost:5173..."
 cd frontend
 npm run dev &
+FRONTEND_PID=$!
+cd ..
 
+echo ""
+echo "✅ Both servers running!"
+echo "Backend:  http://localhost:8000"
+echo "Frontend: http://localhost:5173"
+echo "Docs:     http://localhost:8000/docs"
+echo ""
+echo "Press Ctrl+C to stop all servers"
+echo ""
+
+trap "kill $BACKEND_PID $FRONTEND_PID 2>/dev/null; exit 0" INT
 wait
 ```
 
 **`test-all.sh`** – Run all tests
 ```bash
 #!/bin/bash
-cd backend && python -m pytest tests/ && cd ..
-cd frontend && npm test && cd ..
+
+# MutualFund-Return-Tracker-IDD Test Suite
+# Platform: Unix/Linux/macOS
+
+set -e
+
+echo "Checking virtual environment..."
+[ -d ".venv" ] || { echo "Error: Run ./scripts/setup.sh first"; exit 1; }
+
+echo "Activating virtual environment..."
+source .venv/bin/activate || { echo "Error: Failed to activate venv"; exit 1; }
+
+echo ""
+echo "Running backend tests..."
+cd backend
+python -m pytest tests/ -v --tb=short || { echo "Backend tests failed"; exit 1; }
+cd ..
+
+echo ""
+echo "Running frontend tests..."
+cd frontend
+npm test -- --run || { echo "Frontend tests failed"; exit 1; }
+cd ..
+
+echo ""
+echo "✅ All tests passed!"
 ```
 
 **`build-frontend.sh`** – Build for production
 ```bash
 #!/bin/bash
+
+# MutualFund-Return-Tracker-IDD Frontend Build
+# Platform: Unix/Linux/macOS
+
+set -e
+
+echo "Building frontend for production..."
+[ -d "frontend" ] || { echo "Error: frontend directory not found"; exit 1; }
+[ -f "frontend/package.json" ] || { echo "Error: package.json not found"; exit 1; }
+
 cd frontend
-npm run build
-echo "Frontend built to /frontend/dist"
+npm run build || { echo "Build failed"; exit 1; }
+cd ..
+
+[ -d "frontend/dist" ] || { echo "Error: Build output not found"; exit 1; }
+
+echo ""
+echo "✅ Frontend build complete!"
+echo "Build output: frontend/dist"
+echo "Ready for deployment to Render"
+```
+
+#### **For Windows**
+
+**`setup.bat`** – One-command setup
+```batch
+@echo off
+REM MutualFund-Return-Tracker-IDD Setup Script (Windows)
+
+setlocal enabledelayedexpansion
+
+cls
+echo.
+echo ========================================
+echo MutualFund-Return-Tracker-IDD Setup
+echo ========================================
+echo.
+
+echo Step 1: Checking prerequisites...
+python --version >nul 2>&1 || (echo Error: python not found & pause & exit /b 1)
+npm --version >nul 2>&1 || (echo Error: npm not found & pause & exit /b 1)
+echo [OK] Python and npm found
+echo.
+
+echo Step 2: Creating virtual environment...
+if exist .venv (
+    echo Virtual environment already exists at .venv
+) else (
+    python -m venv .venv || (echo Error: Failed to create venv & pause & exit /b 1)
+    echo [OK] Virtual environment created
+)
+echo.
+
+echo Step 3: Installing backend dependencies...
+call .venv\Scripts\activate.bat || (echo Error: Failed to activate & pause & exit /b 1)
+python -m pip install --upgrade pip >nul 2>&1
+pip install -r backend\requirements.txt || (echo Error: Failed & pause & exit /b 1)
+echo [OK] Backend dependencies installed
+echo.
+
+echo Step 4: Installing frontend dependencies...
+cd frontend
+call npm install || (cd .. & echo Error: Failed & pause & exit /b 1)
+cd ..
+echo [OK] Frontend dependencies installed
+echo.
+
+cls
+echo.
+echo ========================================
+echo [OK] Setup Complete!
+echo ========================================
+echo.
+echo Next steps:
+echo 1. Activate venv: .venv\Scripts\activate
+echo 2. Start servers: scripts\start-dev.bat
+echo 3. Backend API: http://localhost:8000/docs
+echo 4. Frontend: http://localhost:5173
+echo.
+pause
+```
+
+**`start-dev.bat`** – Start both servers
+```batch
+@echo off
+REM MutualFund-Return-Tracker-IDD Development Servers (Windows)
+
+setlocal enabledelayedexpansion
+
+cls
+echo.
+echo ========================================
+echo Starting Development Servers
+echo ========================================
+echo.
+
+if not exist .venv (echo Error: Run scripts\setup.bat first & pause & exit /b 1)
+
+call .venv\Scripts\activate.bat || (echo Error: Failed to activate & pause & exit /b 1)
+
+echo Starting backend server on http://localhost:8000...
+start "Backend" cmd /k "cd backend && python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000"
+
+timeout /t 2 /nobreak
+
+echo Starting frontend server on http://localhost:5173...
+start "Frontend" cmd /k "cd frontend && npm run dev"
+
+echo.
+echo [OK] Both servers running!
+echo Backend:  http://localhost:8000
+echo Frontend: http://localhost:5173
+echo Docs:     http://localhost:8000/docs
+echo.
+echo Close the terminal windows to stop the servers.
+echo.
+pause
+```
+
+**`test-all.bat`** – Run all tests
+```batch
+@echo off
+REM MutualFund-Return-Tracker-IDD Test Suite (Windows)
+
+setlocal enabledelayedexpansion
+
+cls
+echo.
+echo ========================================
+echo Running All Tests
+echo ========================================
+echo.
+
+if not exist .venv (echo Error: Run scripts\setup.bat first & pause & exit /b 1)
+
+call .venv\Scripts\activate.bat || (echo Error: Failed to activate & pause & exit /b 1)
+
+echo Running backend tests...
+cd backend
+python -m pytest tests/ -v --tb=short || (cd .. & echo Error: Backend tests failed & pause & exit /b 1)
+cd ..
+
+echo.
+echo Running frontend tests...
+cd frontend
+call npm test -- --run || (cd .. & echo Error: Frontend tests failed & pause & exit /b 1)
+cd ..
+
+echo.
+echo [OK] All tests passed!
+echo.
+pause
+```
+
+**`build-frontend.bat`** – Build for production
+```batch
+@echo off
+REM MutualFund-Return-Tracker-IDD Frontend Build (Windows)
+
+setlocal enabledelayedexpansion
+
+cls
+echo.
+echo ========================================
+echo Building Frontend for Production
+echo ========================================
+echo.
+
+if not exist frontend (echo Error: frontend directory not found & pause & exit /b 1)
+if not exist frontend\package.json (echo Error: package.json not found & pause & exit /b 1)
+
+echo Building...
+cd frontend
+call npm run build || (cd .. & echo Error: Build failed & pause & exit /b 1)
+cd ..
+
+if not exist frontend\dist (echo Error: Build output not found & pause & exit /b 1)
+
+echo.
+echo [OK] Frontend build complete!
+echo Build output: frontend\dist
+echo Ready for deployment to Render
+echo.
+pause
 ```
 
 ---
 
 ### **Render Configuration** (`render.yaml`)
 
+**Create `backend/runtime.txt` (NEW FILE):**
+```
+python-3.11.7
+```
+
+**Deployment Configuration:**
 ```yaml
-# Render free tier deployment spec
+# Render Free Tier Deployment Configuration
+# Version: 1.0
+# Purpose: Deploy MutualFund-Return-Tracker-IDD to Render
+
 services:
-  # Backend: Web Service
+  # ============================================
+  # Backend Service (FastAPI + Uvicorn)
+  # ============================================
   - type: web
     name: mf-xirr-backend
     plan: free
     runtime: python
-    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
-    buildCommand: pip install -r backend/requirements.txt
+    rootDir: backend
+    
+    # Build dependencies
+    buildCommand: pip install -r requirements.txt
+    
+    # Start command
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    
+    # Environment variables
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.7
+      - key: PORT
+        value: 8000
 
-  # Frontend: Static Site
+  # ============================================
+  # Frontend Service (React + Vite)
+  # ============================================
   - type: static_site
     name: mf-xirr-frontend
     plan: free
-    buildCommand: cd frontend && npm install && npm run build
-    staticPublishPath: frontend/dist
+    
+    # Frontend root directory
+    rootDir: frontend
+    
+    # Build command (install deps + build)
+    buildCommand: npm install && npm run build
+    
+    # Static files output directory
+    staticPublishPath: dist
+    
+    # Environment variables for build time
     envVars:
       - key: VITE_API_URL
         value: https://mf-xirr-backend.onrender.com
+        scope: build
 ```
 
 **Render Free Tier Considerations:**
@@ -655,9 +1011,17 @@ services:
 - ✅ Ephemeral filesystem (fine, no persistence needed)
 - ✅ Cold-start delays hidden by skeleton loader
 - ✅ 512 MB memory (safe for 10k transaction processing)
+- ✅ Python version pinned in `backend/runtime.txt` (ensures consistency)
 - ⚠️ No database (stateless by design—no issue)
 - ⚠️ Single concurrent upload (rare; acceptable for MVP)
 - ⚠️ May spin down after inactivity (documented, expected)
+
+**Key Changes in Updated render.yaml:**
+- ✅ Explicit `rootDir` for clearer configuration
+- ✅ Build command simplified (removes `cd` navigation)
+- ✅ Python version pinned via `backend/runtime.txt`
+- ✅ Environment variable scopes defined
+- ✅ Comprehensive deployment notes included
 
 ---
 
@@ -848,5 +1212,5 @@ git push origin main
 ### Sign-Off
 - **Product Owner:** Hari
 - **Created:** March 19, 2026
-- **Last Updated:** March 19, 2026
+- **Last Updated:** March 21, 2026
 - **Status:** Ready for Phase 2 (Backend Build)
