@@ -29,6 +29,7 @@ Summary Metrics (spec §7):
 
 from datetime import date
 from typing import Optional
+import math
 
 from app.exceptions.calculation_error import XirrCalculationError
 from app.models.response import SummaryMetrics
@@ -84,8 +85,15 @@ def _newton_raphson(
         # Guard against (1+rate) <= 0 which produces complex/undefined values
         if rate <= -1.0:
             return None
-        f = _npv(rate, cash_flows, day_fractions)
-        df = _npv_deriv(rate, cash_flows, day_fractions)
+        try:
+            f = _npv(rate, cash_flows, day_fractions)
+            df = _npv_deriv(rate, cash_flows, day_fractions)
+        except OverflowError:
+            return None
+
+        # If values are not finite (inf/nan) treat as non-convergent
+        if not (math.isfinite(f) and math.isfinite(df)):
+            return None
         if df == 0.0:
             return None
         new_rate = rate - f / df
