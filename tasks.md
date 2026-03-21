@@ -143,6 +143,21 @@
 
 ---
 
+## Phase 14 — Developer Documentation (`/docs`)
+
+- [ ] T074 [P3] [Phase 14] [Deps: None] docs/README.md — Documentation index: overview of all docs, when to read each, links | docs/README.md
+- [ ] T075 [P3] [Phase 14] [Deps: T070] docs/SETUP.md — Installation & environment setup: prerequisites, .venv creation, backend + frontend setup, running locally | docs/SETUP.md
+- [ ] T076 [P3] [Phase 14] [Deps: T029] docs/API.md — Endpoint specifications: POST /api/upload request/response schemas, all error codes, example payloads | docs/API.md
+- [ ] T077 [P3] [Phase 14] [Deps: None] docs/ARCHITECTURE.md — Tech stack & design decisions: data flow diagram, service responsibilities, why FastAPI/React/Render, key constraints | docs/ARCHITECTURE.md
+- [ ] T078 [P3] [Phase 14] [Deps: T075] docs/DEVELOPMENT.md — Development workflow & conventions: branching, code style, adding a new validation rule, adding a new component | docs/DEVELOPMENT.md
+- [ ] T079 [P3] [Phase 14] [Deps: T036,T068] docs/TESTING.md — Testing strategy & coverage: backend pytest layout, frontend vitest layout, how to run, coverage targets, adding new tests | docs/TESTING.md
+- [ ] T080 [P3] [Phase 14] [Deps: T069] docs/DEPLOYMENT.md — Render deployment guide: render.yaml walkthrough, first-deploy steps, setting VITE_API_URL, redeploy process | docs/DEPLOYMENT.md
+- [ ] T081 [P3] [Phase 14] [Deps: T080] docs/RENDER-FREE-TIER.md — Free tier constraints & workarounds: cold-start delay, memory limit, ephemeral filesystem, concurrent upload limits, skeleton loader rationale | docs/RENDER-FREE-TIER.md
+- [ ] T082 [P3] [Phase 14] [Deps: None] docs/TROUBLESHOOTING.md — Common issues & FAQ: venv activation errors, CORS issues, XIRR convergence failures, Render cold-start tip, Excel format errors | docs/TROUBLESHOOTING.md
+- [ ] T083 [P3] [Phase 14] [Deps: T077] docs/images/ — Architecture & data flow diagrams (PNG/SVG): system architecture, data flow, component tree | docs/images/
+
+---
+
 ## Summary
 
 | Phase | Tasks | Status |
@@ -160,3 +175,4 @@
 | Phase 11 — Frontend Tests | T059–T068 | ✅ Complete |
 | Phase 12 — Deployment & Documentation | T069, T070–T071 | ✅ Complete |
 | Phase 13 — CI/CD Automation | T072–T073 | ⏳ Pending (Post-Launch) |
+| Phase 14 — Developer Documentation | T074–T083 | ⏳ Pending (Post-Launch) |

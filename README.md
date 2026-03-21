@@ -53,7 +53,7 @@ traces directly back to a documented intent.
 ```bash
 git clone https://github.com/HariharanMenon/MutualFund-Return-Tracker-IDD.git
 cd MutualFund-Return-Tracker-IDD
-bash scripts/setup.sh        # create venv + install dependencies
+bash scripts/setup.sh        # create .venv + install dependencies
 bash scripts/start-dev.sh    # start backend (8000) + frontend (5173)
 ```
 
@@ -61,7 +61,7 @@ bash scripts/start-dev.sh    # start backend (8000) + frontend (5173)
 ```powershell
 git clone https://github.com/HariharanMenon/MutualFund-Return-Tracker-IDD.git
 cd MutualFund-Return-Tracker-IDD
-.\scripts\setup.ps1          # create venv + install dependencies
+.\scripts\setup.ps1          # create .venv + install dependencies
 .\scripts\start-dev.ps1      # start backend (8000) + frontend (5173)
 ```
 
@@ -156,11 +156,11 @@ All scripts live in `scripts/` and must be run from the **repository root**.
 
 | Script            | Mac / Linux              | Windows PowerShell           | Purpose                              |
 |-------------------|--------------------------|------------------------------|--------------------------------------|
-| Setup             | `bash scripts/setup.sh`  | `.\scripts\setup.ps1`        | Create venv + install all deps       |
+| Setup             | `bash scripts/setup.sh`  | `.\scripts\setup.ps1`        | Create .venv + install all deps      |
 | Start dev servers | `bash scripts/start-dev.sh` | `.\scripts\start-dev.ps1` | Start backend + frontend             |
 | Run all tests     | `bash scripts/test-all.sh` | `.\scripts\test-all.ps1`  | pytest + vitest                      |
 | Build frontend    | `bash scripts/build-frontend.sh` | `.\scripts\build-frontend.ps1` | Vite production build     |
-| Clean artefacts   | `bash scripts/clean.sh`  | `.\scripts\clean.ps1`        | Remove venv, node_modules, dist, caches |
+| Clean artefacts   | `bash scripts/clean.sh`  | `.\scripts\clean.ps1`        | Remove .venv, node_modules, dist, caches |
 
 ---
 

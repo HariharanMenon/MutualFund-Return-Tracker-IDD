@@ -623,7 +623,7 @@ echo -e "${YELLOW}Step 1: Checking prerequisites...${NC}"
 
 if ! command -v python3 &> /dev/null; then
     echo -e "${RED}❌ Error: python3 not found${NC}"
-    echo "Please install Python 3.9 or higher"
+    echo "Please install Python 3.11.7 or higher"
     exit 1
 fi
 
