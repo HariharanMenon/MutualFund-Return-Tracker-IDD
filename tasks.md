@@ -130,16 +130,16 @@
 
 ## Phase 12 — Deployment & Documentation
 
-- [ ] T069 [P3] [Phase 12] [Deps: T029,T058] Render deployment spec — backend web service + static frontend | render.yaml
-- [ ] T072 [P3] [Phase 12] [Deps: None] Utility scripts for local development — Unix shell (.sh) and Windows PowerShell (.ps1) variants: setup, start-dev, test-all, build-frontend, clean | scripts/
-- [ ] T073 [P3] [Phase 12] [Deps: T029,T058] Update README.md with quick-start (OS-specific setup: Mac/Linux shell vs Windows PowerShell) + architecture overview | README.md
+- [x] T069 [P3] [Phase 12] [Deps: T029,T058] Render deployment spec — backend web service + static frontend | render.yaml
+- [x] T070 [P3] [Phase 12] [Deps: None] Utility scripts for local development — Unix shell (.sh) and Windows PowerShell (.ps1) variants: setup, start-dev, test-all, build-frontend, clean | scripts/
+- [x] T071 [P3] [Phase 12] [Deps: T029,T058] Update README.md with quick-start (OS-specific setup: Mac/Linux shell vs Windows PowerShell) + architecture overview | README.md
 
 ---
 
 ## Phase 13 — CI/CD Automation (Optional Follow-Up)
 
-- [ ] T070 [P3] [Phase 13] [Deps: T029] GitHub Actions CI — pytest on push | .github/workflows/backend-tests.yml
-- [ ] T071 [P3] [Phase 13] [Deps: T058] GitHub Actions CI — vitest on push | .github/workflows/frontend-tests.yml
+- [ ] T072 [P3] [Phase 13] [Deps: T029] GitHub Actions CI — pytest on push | .github/workflows/backend-tests.yml
+- [ ] T073 [P3] [Phase 13] [Deps: T058] GitHub Actions CI — vitest on push | .github/workflows/frontend-tests.yml
 
 ---
 
@@ -158,5 +158,5 @@
 | Phase 9 — Frontend Components | T047–T053 | ✅ Complete |
 | Phase 10 — Frontend Hooks + App | T054–T058 | ✅ Complete |
 | Phase 11 — Frontend Tests | T059–T068 | ✅ Complete |
-| Phase 12 — Deployment & Documentation | T069, T072–T073 | ⏳ Pending (MVP Launch) |
+| Phase 12 — Deployment & Documentation | T069, T072–T073 | ✅ Complete |
 | Phase 13 — CI/CD Automation | T070–T071 | ⏳ Pending (Post-Launch) |
