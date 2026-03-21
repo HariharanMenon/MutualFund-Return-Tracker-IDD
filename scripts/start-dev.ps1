@@ -10,9 +10,9 @@ Set-StrictMode -Version Latest
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 
 Write-Host "==> Starting backend on http://localhost:8000 ..."
-# venv is at the repository root; the new window activates it before running uvicorn.
-$BackendCmd = if (Test-Path "$RepoRoot\venv\Scripts\Activate.ps1") {
-    "& '$RepoRoot\venv\Scripts\Activate.ps1'; uvicorn main:app --reload --host 127.0.0.1 --port 8000"
+# .venv is at the repository root; the new window activates it before running uvicorn.
+$BackendCmd = if (Test-Path "$RepoRoot\.venv\Scripts\Activate.ps1") {
+    "& '$RepoRoot\.venv\Scripts\Activate.ps1'; uvicorn main:app --reload --host 127.0.0.1 --port 8000"
 } else {
     "uvicorn main:app --reload --host 127.0.0.1 --port 8000"
 }

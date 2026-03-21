@@ -1,7 +1,7 @@
 # clean.ps1 — Remove generated artefacts (Windows PowerShell)
 # Usage: .\scripts\clean.ps1
 # Run from the repository root.
-# Removes: venv\ (root), frontend\node_modules, frontend\dist,
+# Removes: .venv\ (root), frontend\node_modules, frontend\dist,
 #           __pycache__ trees, .pytest_cache, vitest cache.
 
 $ErrorActionPreference = 'Stop'
@@ -17,8 +17,8 @@ function Remove-IfExists {
     }
 }
 
-Write-Host "==> Removing Python virtual environment (root\venv)..."
-Remove-IfExists "$RepoRoot\venv"
+Write-Host "==> Removing Python virtual environment (root\.venv)..."
+Remove-IfExists "$RepoRoot\.venv"
 
 Write-Host "==> Removing Python cache files..."
 Get-ChildItem -Path $RepoRoot -Filter "__pycache__" -Recurse -Directory -ErrorAction SilentlyContinue |

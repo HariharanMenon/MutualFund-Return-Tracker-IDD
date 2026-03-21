@@ -12,10 +12,10 @@ FAILED=0
 echo "=============================="
 echo " Backend tests (pytest)"
 echo "=============================="
-# venv is at the repository root; activate before cd-ing into backend/.
-if [ -f "$REPO_ROOT/venv/bin/activate" ]; then
+# .venv is at the repository root; activate before cd-ing into backend/.
+if [ -f "$REPO_ROOT/.venv/bin/activate" ]; then
     # shellcheck disable=SC1091
-    source "$REPO_ROOT/venv/bin/activate"
+    source "$REPO_ROOT/.venv/bin/activate"
 fi
 cd "$REPO_ROOT/backend"
 python -m pytest tests/ -v || FAILED=1

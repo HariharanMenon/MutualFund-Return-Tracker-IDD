@@ -158,5 +158,5 @@
 | Phase 9 — Frontend Components | T047–T053 | ✅ Complete |
 | Phase 10 — Frontend Hooks + App | T054–T058 | ✅ Complete |
 | Phase 11 — Frontend Tests | T059–T068 | ✅ Complete |
-| Phase 12 — Deployment & Documentation | T069, T072–T073 | ✅ Complete |
-| Phase 13 — CI/CD Automation | T070–T071 | ⏳ Pending (Post-Launch) |
+| Phase 12 — Deployment & Documentation | T069, T070–T071 | ✅ Complete |
+| Phase 13 — CI/CD Automation | T072–T073 | ⏳ Pending (Post-Launch) |

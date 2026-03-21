@@ -76,20 +76,20 @@ cd MutualFund-Return-Tracker-IDD
 **Mac / Linux**
 ```bash
 # Run from the repository root
-python3 -m venv venv
-source venv/bin/activate
-pip install -r backend/requirements.txt
+python3 -m venv .venv
+source .venv/bin/activate
 cd backend
+pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
 **Windows PowerShell**
 ```powershell
 # Run from the repository root
-python -m venv venv
-.\venv\Scripts\Activate.ps1
-pip install -r backend\requirements.txt
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 cd backend
+pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
@@ -124,10 +124,13 @@ bash scripts/test-all.sh
 Or run each suite independently:
 
 ```bash
-# Backend (from backend/)
+# Backend — activate .venv first (from repo root), then run from backend/
+source .venv/bin/activate          # Windows: .\.venv\Scripts\Activate.ps1
+cd backend
 python -m pytest tests/ -v
 
 # Frontend (from frontend/)
+cd frontend
 npm run test
 ```
 
@@ -244,6 +247,9 @@ Steps:
 
 ```
 MutualFund-Return-Tracker-IDD/
+├── .gitignore                   # Git ignore rules (Python, Node, Render, OS)
+├── .env.example                 # Root-level environment variables template
+├── LICENSE                      # MIT licence
 ├── render.yaml                  # Render deployment blueprint
 ├── scripts/                     # Dev utility scripts (.sh + .ps1)
 ├── intent/                      # IDD — feature spec + product structure docs
@@ -251,6 +257,10 @@ MutualFund-Return-Tracker-IDD/
 │   ├── main.py                  # App entry point
 │   ├── config.py                # Settings (file limits, dates, CORS)
 │   ├── requirements.txt         # Pinned Python dependencies
+│   ├── openapi.yaml             # API specification
+│   ├── Procfile                 # Render process definition
+│   ├── runtime.txt              # Python version for Render
+│   ├── pytest.ini               # pytest configuration
 │   └── app/
 │       ├── api/routes/upload.py # POST /api/upload
 │       ├── services/            # file_parser, validator, processor, xirr_calculator

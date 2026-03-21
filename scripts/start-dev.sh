@@ -18,10 +18,10 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 echo "==> Starting backend on http://localhost:8000 ..."
-# venv is at the repository root; activate before cd-ing into backend/.
-if [ -f "$REPO_ROOT/venv/bin/activate" ]; then
+# .venv is at the repository root; activate before cd-ing into backend/.
+if [ -f "$REPO_ROOT/.venv/bin/activate" ]; then
     # shellcheck disable=SC1091
-    source "$REPO_ROOT/venv/bin/activate"
+    source "$REPO_ROOT/.venv/bin/activate"
 fi
 cd "$REPO_ROOT/backend"
 uvicorn main:app --reload --host 127.0.0.1 --port 8000 &

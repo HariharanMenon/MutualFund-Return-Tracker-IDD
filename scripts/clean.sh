@@ -2,7 +2,7 @@
 # clean.sh — Remove generated artefacts (Mac / Linux)
 # Usage: bash scripts/clean.sh
 # Run from the repository root.
-# Removes: venv/ (root), frontend/node_modules, frontend/dist,
+# Removes: .venv/ (root), frontend/node_modules, frontend/dist,
 #           __pycache__ trees, .pytest_cache, vitest cache.
 
 set -euo pipefail
@@ -10,8 +10,8 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
-echo "==> Removing Python virtual environment (root/venv)..."
-rm -rf venv
+echo "==> Removing Python virtual environment (root/.venv)..."
+rm -rf .venv
 
 echo "==> Removing Python cache files..."
 find . -type d -name "__pycache__" -not -path "./.git/*" -exec rm -rf {} + 2>/dev/null || true

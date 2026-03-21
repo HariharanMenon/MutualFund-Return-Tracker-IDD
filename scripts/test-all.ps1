@@ -12,9 +12,9 @@ $Failed   = $false
 Write-Host "=============================="
 Write-Host " Backend tests (pytest)"
 Write-Host "=============================="
-# venv is at the repository root; activate before pushing into backend/.
-if (Test-Path "$RepoRoot\venv\Scripts\Activate.ps1") {
-    & "$RepoRoot\venv\Scripts\Activate.ps1"
+# .venv is at the repository root; activate before pushing into backend/.
+if (Test-Path "$RepoRoot\.venv\Scripts\Activate.ps1") {
+    & "$RepoRoot\.venv\Scripts\Activate.ps1"
 }
 Push-Location "$RepoRoot\backend"
 try {

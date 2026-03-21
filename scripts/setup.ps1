@@ -8,13 +8,13 @@ Set-StrictMode -Version Latest
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 
 Write-Host "==> Setting up backend Python virtual environment..."
-# venv lives at the repository root; requirements.txt is in backend/
-python -m venv "$RepoRoot\venv"
-& "$RepoRoot\venv\Scripts\Activate.ps1"
+# .venv lives at the repository root; requirements.txt is in backend/
+python -m venv "$RepoRoot\.venv"
+& "$RepoRoot\.venv\Scripts\Activate.ps1"
 python -m pip install --upgrade pip --quiet
 pip install -r "$RepoRoot\backend\requirements.txt" --quiet
 deactivate
-Write-Host "    Backend venv ready."
+Write-Host "    Backend .venv ready."
 
 Write-Host "==> Setting up frontend Node.js dependencies..."
 Push-Location "$RepoRoot\frontend"
