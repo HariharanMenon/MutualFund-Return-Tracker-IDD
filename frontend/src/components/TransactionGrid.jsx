@@ -17,6 +17,8 @@ function cell(value, formatter) {
  *   transactions {Array}  Array of transaction objects from backend
  */
 export default function TransactionGrid({ transactions }) {
+  const transactionList = transactions || [];
+  
   return (
     <div className="transaction-grid fade-in">
       <div className="transaction-table-wrapper">
@@ -40,7 +42,7 @@ export default function TransactionGrid({ transactions }) {
             </tr>
           </thead>
           <tbody>
-            {transactions.map((tx, i) => (
+            {transactionList.map((tx, i) => (
               <tr key={i}>
                 <td>{cell(tx.date, formatDate)}</td>
                 <td>{cell(tx.transactionType)}</td>
@@ -54,7 +56,7 @@ export default function TransactionGrid({ transactions }) {
         </table>
       </div>
       <p className="transaction-grid__count">
-        {transactions.length} transaction{transactions.length !== 1 ? 's' : ''}
+        {transactionList.length} transaction{transactionList.length !== 1 ? 's' : ''}
       </p>
     </div>
   );

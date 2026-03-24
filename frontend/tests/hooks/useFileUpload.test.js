@@ -25,9 +25,11 @@ vi.mock('../../src/services/validation.js', () => ({
   isValidFileSize: vi.fn((file) => file.size <= 10 * 1024 * 1024),
 }));
 
-vi.useFakeTimers();
-
 describe('useFileUpload Hook', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
   afterEach(() => {
     vi.runOnlyPendingTimers();
     vi.useRealTimers();
@@ -131,15 +133,8 @@ describe('useFileUpload Hook', () => {
     });
 
     it('transitions to success when API responds (before skeleton timer)', async () => {
-      vi.useRealTimers(); // Use real timers for async operations
-
+      vi.useRealTimers();
       const { result } = renderHook(() => useFileUpload());
-
-      const mockResponse = {
-        xirr: 0.15,
-        transactions: [],
-        summaryMetrics: { totalInvested: 100, finalProceeds: 150, profitLoss: 50 },
-      };
 
       const validFile = new File(['test'], 'test.xlsx', {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -151,10 +146,11 @@ describe('useFileUpload Hook', () => {
 
       await waitFor(() => {
         expect(result.current.state).toBe('success');
-      });
+      }, { timeout: 5000 });
 
       expect(result.current.data).not.toBeNull();
-    });
+      vi.useFakeTimers();
+    }, 10000);
   });
 
   describe('Error State', () => {
@@ -284,14 +280,13 @@ describe('useFileUpload Hook', () => {
 
   describe('Cleanup', () => {
     it('clears skeleton timeout on unmount', () => {
-      const { unmount } = renderHook(() => useFileUpload());
+      const { result, unmount } = renderHook(() => useFileUpload());
 
       const validFile = new File(['test'], 'test.xlsx', {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
 
       act(() => {
-        const { result } = renderHook(() => useFileUpload());
         result.current.handleFile(validFile);
       });
 

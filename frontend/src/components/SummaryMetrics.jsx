@@ -5,13 +5,23 @@ import './SummaryMetrics.css';
  * SummaryMetrics — three-card summary panel (spec §4.3).
  *
  * Props:
- *   summaryMetrics {Object}
+ *   metrics {Object}
  *     totalInvested  {number}  Sum of all buy-side transactions
  *     finalProceeds  {number}  Final SELL/REDEMPTION amount
  *     profitLoss     {number}  finalProceeds − totalInvested
  */
-export default function SummaryMetrics({ summaryMetrics }) {
-  const { totalInvested, finalProceeds, profitLoss } = summaryMetrics;
+export default function SummaryMetrics({ metrics }) {
+  if (!metrics) {
+    return (
+      <div className="summary-metrics summary-metrics-grid">
+        <MetricCard label="Total Invested" value="—" />
+        <MetricCard label="Final Proceeds" value="—" />
+        <MetricCard label="Profit / Loss" value="—" />
+      </div>
+    );
+  }
+
+  const { totalInvested, finalProceeds, profitLoss } = metrics;
   const plPositive = profitLoss >= 0;
 
   return (

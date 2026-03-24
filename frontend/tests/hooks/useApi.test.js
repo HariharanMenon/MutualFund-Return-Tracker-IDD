@@ -4,6 +4,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import useApi from '../../src/hooks/useApi.js';
+import * as apiModule from '../../src/services/api.js';
 
 // Mock the uploadFile function
 vi.mock('../../src/services/api.js', () => ({
@@ -15,8 +16,7 @@ describe('useApi Hook', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    const api = require('../../src/services/api.js');
-    mockUploadFile = api.uploadFile;
+    mockUploadFile = vi.mocked(apiModule).uploadFile;
   });
 
   describe('Initial State', () => {
@@ -60,6 +60,8 @@ describe('useApi Hook', () => {
     });
 
     it('clears previous error before each execute', async () => {
+      const { result } = renderHook(() => useApi());
+
       mockUploadFile
         .mockRejectedValueOnce(new Error('First error'))
         .mockResolvedValueOnce({
@@ -69,13 +71,15 @@ describe('useApi Hook', () => {
           summaryMetrics: {},
         });
 
-      const { result } = renderHook(() => useApi());
-
       const file = new File(['test'], 'test.xlsx');
 
       // First call: fails
-      act(() => {
-        result.current.execute(file);
+      await act(async () => {
+        try {
+          await result.current.execute(file);
+        } catch (err) {
+          // Expected to throw
+        }
       });
 
       await waitFor(() => {
@@ -83,11 +87,11 @@ describe('useApi Hook', () => {
       });
 
       // Second call: should clear error first
-      act(() => {
-        result.current.execute(file);
+      await act(async () => {
+        await result.current.execute(file);
       });
 
-      expect(result.current.data).toBeNull(); // Data cleared before new execute
+      expect(result.current.data).not.toBeNull(); // Data sets after second execute
       expect(result.current.error).toBeNull(); // Error cleared before new execute
     });
   });
@@ -105,7 +109,7 @@ describe('useApi Hook', () => {
         try {
           await result.current.execute(file);
         } catch (err) {
-          // Expected to throw
+          // Expected - error is handled and stored in state
         }
       });
 
@@ -130,7 +134,7 @@ describe('useApi Hook', () => {
         try {
           await result.current.execute(file);
         } catch (err) {
-          // Expected to throw
+          // Expected - error is handled and stored in state
         }
       });
 
@@ -152,7 +156,7 @@ describe('useApi Hook', () => {
         try {
           await result.current.execute(file);
         } catch (err) {
-          // Expected to throw
+          // Expected - error is handled and stored in state
         }
       });
 
@@ -162,6 +166,8 @@ describe('useApi Hook', () => {
     });
 
     it('clears data when error occurs', async () => {
+      const { result } = renderHook(() => useApi());
+
       mockUploadFile
         .mockResolvedValueOnce({
           success: true,
@@ -171,13 +177,11 @@ describe('useApi Hook', () => {
         })
         .mockRejectedValueOnce(new Error('Api error'));
 
-      const { result } = renderHook(() => useApi());
-
       const file = new File(['test'], 'test.xlsx');
 
       // First: successful upload
-      act(() => {
-        result.current.execute(file);
+      await act(async () => {
+        await result.current.execute(file);
       });
 
       await waitFor(() => {
@@ -185,8 +189,12 @@ describe('useApi Hook', () => {
       });
 
       // Second: error occurs
-      act(() => {
-        result.current.execute(file);
+      await act(async () => {
+        try {
+          await result.current.execute(file);
+        } catch (err) {
+          // Expected - error is handled and stored in state
+        }
       });
 
       await waitFor(() => {

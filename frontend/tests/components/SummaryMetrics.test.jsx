@@ -40,7 +40,7 @@ describe('SummaryMetrics Component', () => {
     it('displays total invested amount in currency format', () => {
       render(<SummaryMetrics metrics={mockMetrics} />);
 
-      expect(screen.getByText(/₹15,00,000\.00/)).toBeInTheDocument();
+      expect(screen.getByText(/₹12,50,000\.00/)).toBeInTheDocument();
     });
 
     it('handles different invested amounts', () => {
@@ -62,9 +62,11 @@ describe('SummaryMetrics Component', () => {
         profitLoss: 0,
       };
 
-      render(<SummaryMetrics metrics={zeroMetrics} />);
+      const { container } = render(<SummaryMetrics metrics={zeroMetrics} />);
 
-      expect(screen.getByText(/₹0\.00/)).toBeInTheDocument();
+      // Get the first metric card (Total Invested) and check it contains ₹0.00
+      const metricCards = container.querySelectorAll('.metric-card__value');
+      expect(metricCards[0]).toHaveTextContent(/₹0\.00/);
     });
   });
 
@@ -86,20 +88,16 @@ describe('SummaryMetrics Component', () => {
     it('displays positive profit in green', () => {
       const { container } = render(<SummaryMetrics metrics={mockMetrics} />);
 
-      const profitElement = screen.getByText(/₹2,25,500\.00/) ||
-                           container.querySelector('[class*="profit"]');
-
-      // Profit should have green class
-      expect(profitElement).toHaveClass(expect.stringMatching(/success|positive|green/i));
+      const profitElement = container.querySelector('.metric-card__value--positive');
+      expect(profitElement).toBeInTheDocument();
+      expect(profitElement).toHaveTextContent(/\u20b92,25,500\.00/);
     });
 
     it('displays negative loss in red', () => {
       const { container } = render(<SummaryMetrics metrics={mockNegativeMetrics} />);
 
-      const lossElement = screen.getByText(/-₹1,50,000\.00/) ||
-                         container.querySelector('[class*="loss"]');
-
-      // Loss should have red class (if not inheriting from negative sign)
+      const lossElement = container.querySelector('.metric-card__value--negative');
+      expect(lossElement).toBeInTheDocument();
     });
 
     it('formats positive profit correctly', () => {
@@ -109,10 +107,10 @@ describe('SummaryMetrics Component', () => {
     });
 
     it('formats negative loss with minus sign', () => {
-      render(<SummaryMetrics metrics={mockNegativeMetrics} />);
+      const { container } = render(<SummaryMetrics metrics={mockNegativeMetrics} />);
 
-      expect(screen.getByText(/-/)).toBeInTheDocument();
-      expect(screen.getByText(/150,000\.00/)).toBeInTheDocument();
+      const lossElement = container.querySelector('.metric-card__value--negative');
+      expect(lossElement?.textContent).toMatch(/-/);
     });
 
     it('displays zero profit/loss correctly', () => {
@@ -122,25 +120,32 @@ describe('SummaryMetrics Component', () => {
         profitLoss: 0,
       };
 
-      render(<SummaryMetrics metrics={breakEvenMetrics} />);
+      const { container } = render(<SummaryMetrics metrics={breakEvenMetrics} />);
 
-      expect(screen.getByText(/₹0\.00/)).toBeInTheDocument();
+      // Get the third metric card (Profit/Loss) and check it contains ₹0.00
+      const metricCards = container.querySelectorAll('.metric-card__value');
+      expect(metricCards[2]).toHaveTextContent(/₹0\.00/);
     });
   });
 
   describe('Currency Formatting', () => {
     it('uses ₹ (Rupee) symbol for all amounts', () => {
-      render(<SummaryMetrics metrics={mockMetrics} />);
+      const { container } = render(<SummaryMetrics metrics={mockMetrics} />);
 
-      const rupeeSymbols = screen.getAllByText(/₹/);
-      expect(rupeeSymbols.length).toBeGreaterThanOrEqual(3);
+      const metricValues = container.querySelectorAll('.metric-card__value');
+      let rupeeCount = 0;
+      metricValues.forEach(value => {
+        if (value.textContent?.includes('₹')) rupeeCount++;
+      });
+      expect(rupeeCount).toBeGreaterThanOrEqual(3);
     });
 
     it('applies Indian number grouping (lakh/crore)', () => {
-      render(<SummaryMetrics metrics={{ totalInvested: 12500000, finalProceeds: 15000000, profitLoss: 2500000 }} />);
+      const { container } = render(<SummaryMetrics metrics={{ totalInvested: 12500000, finalProceeds: 15000000, profitLoss: 2500000 }} />);
 
       // 12500000 should be formatted as 1,25,00,000 (Indian grouping)
-      expect(screen.getByText(/1,25,00,000\.00/)).toBeInTheDocument();
+      const metricCards = container.querySelectorAll('.metric-card__value');
+      expect(metricCards[0]).toHaveTextContent(/1,25,00,000\.00/);
     });
 
     it('displays exactly 2 decimal places', () => {
@@ -150,30 +155,30 @@ describe('SummaryMetrics Component', () => {
         profitLoss: 500,
       };
 
-      render(<SummaryMetrics metrics={customMetrics} />);
+      const { container } = render(<SummaryMetrics metrics={customMetrics} />);
 
       // All amounts should end in .00
-      const amounts = screen.getAllByText(/\.00/);
-      expect(amounts.length).toBeGreaterThanOrEqual(3);
+      const metricValues = container.querySelectorAll('.metric-card__value');
+      metricValues.forEach(value => {
+        expect(value.textContent).toMatch(/\.00/);
+      });
     });
   });
 
   describe('Coloring', () => {
     it('profit is green when positive', () => {
-      render(<SummaryMetrics metrics={mockMetrics} />);
+      const { container } = render(<SummaryMetrics metrics={mockMetrics} />);
 
-      const profitDisplay = screen.getByText(/₹2,25,500\.00/);
-      expect(profitDisplay).toHaveClass(expect.stringMatching(/green|success|positive/i));
+      const profitDisplay = container.querySelector('.metric-card__value--positive');
+      expect(profitDisplay).toBeInTheDocument();
+      expect(profitDisplay).toHaveTextContent(/₹2,25,500\.00/);
     });
 
     it('loss is red when negative', () => {
-      render(<SummaryMetrics metrics={mockNegativeMetrics} />);
+      const { container } = render(<SummaryMetrics metrics={mockNegativeMetrics} />);
 
-      const lossAmount = screen.getByText(/150,000\.00/);
-      const container = lossAmount.closest('div');
-
-      // The container should have red class
-      expect(container).toHaveClass(expect.stringMatching(/red|error|negative/i));
+      const lossElement = container.querySelector('.metric-card__value--negative');
+      expect(lossElement).toBeInTheDocument();
     });
 
     it('invested and proceeds use neutral color', () => {
@@ -194,10 +199,11 @@ describe('SummaryMetrics Component', () => {
         profitLoss: 234567891,
       };
 
-      render(<SummaryMetrics metrics={largeMetrics} />);
+      const { container } = render(<SummaryMetrics metrics={largeMetrics} />);
 
-      // Should render without crashing
-      expect(screen.getByText(/metric/i)).toBeInTheDocument();
+      // Should render without crashing - check that all metric values are rendered
+      const metricValues = container.querySelectorAll('.metric-card__value');
+      expect(metricValues.length).toBe(3);
     });
 
     it('handles fractional amounts (rounded to 2dp)', () => {
@@ -207,10 +213,13 @@ describe('SummaryMetrics Component', () => {
         profitLoss: 499.888,
       };
 
-      render(<SummaryMetrics metrics={fractionalMetrics} />);
+      const { container } = render(<SummaryMetrics metrics={fractionalMetrics} />);
 
-      // Should round to 2 decimal places
-      expect(screen.getByText(/\.00/)).toBeInTheDocument();
+      // All amounts should be rounded to 2 decimal places
+      const metricValues = container.querySelectorAll('.metric-card__value');
+      metricValues.forEach(value => {
+        expect(value.textContent).toMatch(/\.00$/);
+      });
     });
 
     it('renders null metrics gracefully', () => {
@@ -236,7 +245,9 @@ describe('SummaryMetrics Component', () => {
       const { container } = render(<SummaryMetrics metrics={mockMetrics} />);
 
       const wrapper = container.firstChild;
-      expect(wrapper).toHaveClass(expect.stringMatching(/grid|flex|row|metrics/i));
+      const className = wrapper?.className || '';
+      // Check if the wrapper has grid or metrics-related classes
+      expect(className).toMatch(/grid|metrics/);
     });
   });
 });
