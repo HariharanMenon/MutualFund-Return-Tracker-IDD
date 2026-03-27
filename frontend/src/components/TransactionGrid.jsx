@@ -22,14 +22,15 @@ export default function TransactionGrid({ transactions }) {
   return (
     <div className="transaction-grid fade-in">
       <div className="transaction-table-wrapper">
+        {/* Column widths: Date 13%, Tx Type 27%, Amount 15%, Units 13%, Price 14%, Unit Balance 18% */}
         <table className="transaction-table">
           <colgroup>
-            <col />  {/* Date          13% */}
-            <col />  {/* Tx Type       27% */}
-            <col />  {/* Amount        15% */}
-            <col />  {/* Units         13% */}
-            <col />  {/* Price         14% */}
-            <col />  {/* Unit Balance  18% */}
+            <col />
+            <col />
+            <col />
+            <col />
+            <col />
+            <col />
           </colgroup>
           <thead>
             <tr>
