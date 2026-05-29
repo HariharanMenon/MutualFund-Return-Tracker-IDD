@@ -2,7 +2,7 @@
 // Implements: idle → loading → skeleton → result/error
 // Integrates frontend validation + useApi hook + timing for skeleton display.
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { isValidFileSize, isValidFileType } from '../services/validation.js';
 import useApi from './useApi.js';
 import logger from '../utils/logger.js';
@@ -44,9 +44,17 @@ export default function useFileUpload() {
   const [state, setState] = useState('idle'); // idle | loading | skeleton | success | error
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
-  const [skeletonTimeoutId, setSkeletonTimeoutId] = useState(null);
 
-  const { isLoading: apiIsLoading, error: apiError, data: apiData, execute: apiExecute } = useApi();
+  // useRef instead of useState: timeout ID is a mutable side-effect value,
+  // not UI state — storing it in useState causes unnecessary re-renders.
+  const skeletonTimeoutRef = useRef(null);
+
+  // Tracks whether the hook is still mounted so async callbacks after
+  // await apiExecute() never call setState on an unmounted component,
+  // which is the root cause of the act() warnings in tests.
+  const isMountedRef = useRef(true);
+
+  const { execute: apiExecute } = useApi();
 
   /**
    * Validate file and initiate upload.
@@ -84,7 +92,7 @@ export default function useFileUpload() {
     logger.info('File validation passed, starting upload');
 
     // Schedule skeleton display after 2 seconds of loading
-    const timeoutId = setTimeout(() => {
+    skeletonTimeoutRef.current = setTimeout(() => {
       setState((prevState) => {
         if (prevState === 'loading') {
           logger.info('Transitioning to skeleton state');
@@ -93,19 +101,22 @@ export default function useFileUpload() {
         return prevState;
       });
     }, 2000);
-    setSkeletonTimeoutId(timeoutId);
 
     // Call API
     try {
       const response = await apiExecute(file);
-      // Success!
-      clearTimeout(timeoutId);
+      clearTimeout(skeletonTimeoutRef.current);
+      skeletonTimeoutRef.current = null;
+      // Guard: do not update state if the component unmounted while awaiting
+      if (!isMountedRef.current) return;
       setData(response);
       setState('success');
       logger.info('File upload succeeded');
     } catch (err) {
-      // Failure
-      clearTimeout(timeoutId);
+      clearTimeout(skeletonTimeoutRef.current);
+      skeletonTimeoutRef.current = null;
+      // Guard: do not update state if the component unmounted while awaiting
+      if (!isMountedRef.current) return;
       setError({
         message: err.message || 'Upload failed',
         detail: err.detail || null,
@@ -119,24 +130,28 @@ export default function useFileUpload() {
    * Reset to idle state — allows user to upload another file.
    */
   const reset = useCallback(() => {
-    if (skeletonTimeoutId) {
-      clearTimeout(skeletonTimeoutId);
-      setSkeletonTimeoutId(null);
+    if (skeletonTimeoutRef.current) {
+      clearTimeout(skeletonTimeoutRef.current);
+      skeletonTimeoutRef.current = null;
     }
     setState('idle');
     setData(null);
     setError(null);
     logger.info('Upload state reset to idle');
-  }, [skeletonTimeoutId]);
+  }, []); // stable — refs never change identity
 
-  // Cleanup on unmount
+  // Cleanup on unmount: clear any pending skeleton timer and flip the
+  // mounted flag so in-flight async handlers skip their setState calls.
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
-      if (skeletonTimeoutId) {
-        clearTimeout(skeletonTimeoutId);
+      isMountedRef.current = false;
+      if (skeletonTimeoutRef.current) {
+        clearTimeout(skeletonTimeoutRef.current);
+        skeletonTimeoutRef.current = null;
       }
     };
-  }, [skeletonTimeoutId]);
+  }, []); // runs once on mount/unmount — refs are stable
 
   return {
     state,       // 'idle' | 'loading' | 'skeleton' | 'success' | 'error'
