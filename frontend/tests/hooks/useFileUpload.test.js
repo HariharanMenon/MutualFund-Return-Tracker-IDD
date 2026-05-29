@@ -83,7 +83,7 @@ describe('useFileUpload Hook', () => {
 
       expect(result.current.state).toBe('error');
       expect(result.current.error.message).toContain('validation failed');
-      expect(result.current.error.detail).toContain('too large');
+      expect(result.current.error.details).toContain('too large');
     });
 
     it('accepts valid .xlsx file', async () => {
