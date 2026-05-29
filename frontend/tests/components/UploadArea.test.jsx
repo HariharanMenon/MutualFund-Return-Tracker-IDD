@@ -160,19 +160,25 @@ describe('UploadArea Component', () => {
     });
 
     it('displays error message for oversized file', async () => {
-      const user = userEvent.setup();
       const onFile = vi.fn();
       const { container } = render(<UploadArea onFile={onFile} />);
 
       const fileInput = container.querySelector('input[type="file"]');
+      // Use fireEvent inside act() instead of userEvent.upload() — userEvent
+      // processes the real 11MB file size synchronously, causing setLocalError
+      // to fire outside act()'s boundary and triggering the warning.
       const largeFile = new File(
         ['x'.repeat(11 * 1024 * 1024)],
         'large.xlsx'
       );
 
-      await user.upload(fileInput, largeFile);
+      await act(async () => {
+        fireEvent.change(fileInput, { target: { files: [largeFile] } });
+      });
 
       // Component should display "too large" error message
+      expect(onFile).not.toHaveBeenCalled();
+      expect(container.querySelector('.upload-area__error')).toBeInTheDocument();
     });
 
     it('clears error message when valid file is selected', async () => {
@@ -214,12 +220,14 @@ describe('UploadArea Component', () => {
     });
 
     it('rejects files larger than 10MB', async () => {
-      const user = userEvent.setup();
       const onFile = vi.fn();
       const { container } = render(<UploadArea onFile={onFile} />);
 
       const fileInput = container.querySelector('input[type="file"]');
 
+      // Use fireEvent inside act() — same reason as the oversized test above:
+      // userEvent processes real file size synchronously, causing setLocalError
+      // to escape act()'s flush boundary and produce the warning.
       const largeFile = new File(
         ['x'.repeat(11 * 1024 * 1024)],
         'large.xlsx',
@@ -228,9 +236,13 @@ describe('UploadArea Component', () => {
         }
       );
 
-      await user.upload(fileInput, largeFile);
+      await act(async () => {
+        fireEvent.change(fileInput, { target: { files: [largeFile] } });
+      });
 
       // Should not call onFile for oversized file
+      expect(onFile).not.toHaveBeenCalled();
+      expect(container.querySelector('.upload-area__error')).toBeInTheDocument();
     });
   });
 
