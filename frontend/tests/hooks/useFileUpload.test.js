@@ -5,17 +5,17 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import useFileUpload from '../../src/hooks/useFileUpload.js';
 
-// Mock the useApi hook
+// Create a stable execute mock ref accessible both inside vi.mock() and inside tests.
+// vi.hoisted() is hoisted by Vitest's transform so it is available in the vi.mock() factory.
+const mockExecute = vi.hoisted(() => vi.fn());
+
+// Mock the useApi hook using the shared mockExecute ref.
 vi.mock('../../src/hooks/useApi.js', () => ({
   default: () => ({
     isLoading: false,
     error: null,
     data: null,
-    execute: vi.fn(async () => ({
-      xirr: 0.1254,
-      transactions: [],
-      summaryMetrics: { totalInvested: 100, finalProceeds: 150, profitLoss: 50 },
-    })),
+    execute: mockExecute,
   }),
 }));
 
@@ -28,6 +28,12 @@ vi.mock('../../src/services/validation.js', () => ({
 describe('useFileUpload Hook', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    // Reset to the default success implementation before each test.
+    mockExecute.mockResolvedValue({
+      xirr: 0.1254,
+      transactions: [],
+      summaryMetrics: { totalInvested: 100, finalProceeds: 150, profitLoss: 50 },
+    });
   });
 
   afterEach(() => {
@@ -133,7 +139,10 @@ describe('useFileUpload Hook', () => {
     });
 
     it('transitions to success when API responds (before skeleton timer)', async () => {
-      vi.useRealTimers();
+      // Fake timers are active (set by beforeEach). Promises resolve normally via
+      // microtasks even with fake timers, so awaiting handleFile() lets the entire
+      // async chain complete (mock resolves → clearTimeout → setState('success'))
+      // before the 2-second fake skeleton timer ever fires.
       const { result } = renderHook(() => useFileUpload());
 
       const validFile = new File(['test'], 'test.xlsx', {
@@ -141,30 +150,18 @@ describe('useFileUpload Hook', () => {
       });
 
       await act(async () => {
-        result.current.handleFile(validFile);
+        await result.current.handleFile(validFile);
       });
 
-      await waitFor(() => {
-        expect(result.current.state).toBe('success');
-      }, { timeout: 5000 });
-
+      expect(result.current.state).toBe('success');
       expect(result.current.data).not.toBeNull();
-      vi.useFakeTimers();
     }, 10000);
   });
 
   describe('Error State', () => {
     it('handles API errors', async () => {
-      vi.mock('../../src/hooks/useApi.js', () => ({
-        default: () => ({
-          isLoading: false,
-          error: { message: 'API Error', detail: 'details' },
-          data: null,
-          execute: vi.fn(async () => {
-            throw new Error('API Error');
-          }),
-        }),
-      }));
+      // Override the shared mock for this test only — no vi.mock() needed.
+      mockExecute.mockRejectedValueOnce(new Error('API Error'));
 
       const { result } = renderHook(() => useFileUpload());
 
@@ -173,11 +170,11 @@ describe('useFileUpload Hook', () => {
       });
 
       await act(async () => {
-        result.current.handleFile(validFile);
+        await result.current.handleFile(validFile);
       });
 
-      // State should eventually be error (mock API always succeeds in default mock)
-      // This test verifies error handling logic exists
+      expect(result.current.state).toBe('error');
+      expect(result.current.error.message).toBe('API Error');
     });
   });
 

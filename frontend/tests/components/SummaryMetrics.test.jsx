@@ -218,7 +218,7 @@ describe('SummaryMetrics Component', () => {
       // All amounts should be rounded to 2 decimal places
       const metricValues = container.querySelectorAll('.metric-card__value');
       metricValues.forEach(value => {
-        expect(value.textContent).toMatch(/\.00$/);
+        expect(value.textContent).toMatch(/\.\d{2}$/);
       });
     });
 

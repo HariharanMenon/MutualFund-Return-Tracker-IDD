@@ -138,8 +138,8 @@
 
 ## Phase 13 — CI/CD Automation (Optional Follow-Up)
 
-- [ ] T072 [P3] [Phase 13] [Deps: T029] GitHub Actions CI — pytest on push | .github/workflows/backend-tests.yml
-- [ ] T073 [P3] [Phase 13] [Deps: T058] GitHub Actions CI — vitest on push | .github/workflows/frontend-tests.yml
+- [x] T072 [P3] [Phase 13] [Deps: T029] GitHub Actions CI — pytest on push | .github/workflows/backend-tests.yml
+- [x] T073 [P3] [Phase 13] [Deps: T058] GitHub Actions CI — vitest on push | .github/workflows/frontend-tests.yml
 
 ---
 
