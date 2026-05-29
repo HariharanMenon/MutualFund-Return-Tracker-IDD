@@ -31,15 +31,15 @@ export function formatDate(dateStr) {
 }
 
 /**
- * Formats a decimal fraction as a percentage with 2dp.
- * Example: 0.1496 → "14.96%"
- * Note: the backend returns xirr as a fraction (0.1496), not 14.96.
- * @param {number|null} value  Fractional XIRR (e.g. 0.1496)
+ * Formats as a percentage with 2dp.
+ * Example: 14.9608 → "14.96%"
+ * Note: the backend returns xirr as a 14.96.
+ * @param {number|null} value  Fractional XIRR (e.g. 14.9678)
  * @returns {string}
  */
 export function formatPercentage(value) {
   if (value == null) return EMPTY;
-  return `${(Number(value) * 100).toFixed(2)}%`;
+  return `${(Number(value)).toFixed(2)}%`;
 }
 
 /**

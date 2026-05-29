@@ -5,7 +5,7 @@ import './XirrDisplay.css';
  * XirrDisplay — shows the XIRR value prominently (spec §4.2).
  *
  * Props:
- *   value {number}  Fractional XIRR from backend (e.g. 0.1496 → displayed as 14.96%)
+ *   value {number}  XIRR from backend (e.g. 14.9608 → displayed as 14.96%)
  */
 export default function XirrDisplay({ value }) {
   const numValue = value ?? 0;

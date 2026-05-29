@@ -114,7 +114,7 @@ export default function App() {
 
       {/* Footer */}
       <footer className="app-footer">
-        <p>Mutual Fund XIRR Tracker • Powered by FastAPI + React</p>
+        <p>© 2026 Mutual Fund XIRR Tracker</p>
       </footer>
     </div>
   );
