@@ -2,7 +2,7 @@
 // Tests: drag-and-drop, file picker, validation, disabled state.
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import UploadArea from '../../src/components/UploadArea.jsx';
 
@@ -34,6 +34,7 @@ describe('UploadArea Component', () => {
 
   describe('File Picker', () => {
     it('calls onFile when file is selected via input', async () => {
+      const user = userEvent.setup();
       const onFile = vi.fn();
       const { container } = render(<UploadArea onFile={onFile} />);
 
@@ -42,19 +43,20 @@ describe('UploadArea Component', () => {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
 
-      await userEvent.upload(fileInput, file);
+      await user.upload(fileInput, file);
 
       expect(onFile).toHaveBeenCalledWith(expect.any(File));
     });
 
     it('rejects non-.xlsx files', async () => {
+      const user = userEvent.setup();
       const onFile = vi.fn();
       const { container } = render(<UploadArea onFile={onFile} />);
 
       const fileInput = container.querySelector('input[type="file"]');
       const csvFile = new File(['test'], 'test.csv', { type: 'text/csv' });
 
-      await userEvent.upload(fileInput, csvFile);
+      await user.upload(fileInput, csvFile);
 
       // Component validates file type, so onFile should not be called
       // (actual behavior depends on component implementation)
@@ -108,6 +110,7 @@ describe('UploadArea Component', () => {
     });
 
     it('ignores file selection when disabled', async () => {
+      const user = userEvent.setup();
       const onFile = vi.fn();
       const { container } = render(<UploadArea onFile={onFile} disabled={true} />);
 
@@ -116,7 +119,7 @@ describe('UploadArea Component', () => {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
 
-      await userEvent.upload(fileInput, file);
+      await user.upload(fileInput, file);
 
       // onFile should not be called when disabled
       expect(onFile).not.toHaveBeenCalled();
@@ -142,19 +145,22 @@ describe('UploadArea Component', () => {
   });
 
   describe('Validation Error Display', () => {
-    it('displays error message for invalid file type', () => {
+    it('displays error message for invalid file type', async () => {
       const onFile = vi.fn();
       const { container } = render(<UploadArea onFile={onFile} />);
 
       const fileInput = container.querySelector('input[type="file"]');
       const csvFile = new File(['test'], 'test.csv');
 
-      fireEvent.change(fileInput, { target: { files: [csvFile] } });
+      await act(async () => {
+       fireEvent.change(fileInput, { target: { files: [csvFile] } });
+      });
 
       // Component should display error message (depends on implementation)
     });
 
     it('displays error message for oversized file', async () => {
+      const user = userEvent.setup();
       const onFile = vi.fn();
       const { container } = render(<UploadArea onFile={onFile} />);
 
@@ -164,12 +170,13 @@ describe('UploadArea Component', () => {
         'large.xlsx'
       );
 
-      await userEvent.upload(fileInput, largeFile);
+      await user.upload(fileInput, largeFile);
 
       // Component should display "too large" error message
     });
 
     it('clears error message when valid file is selected', async () => {
+      const user = userEvent.setup();
       const onFile = vi.fn();
       const { container } = render(<UploadArea onFile={onFile} />);
 
@@ -177,13 +184,13 @@ describe('UploadArea Component', () => {
 
       // Upload invalid file
       const csvFile = new File(['test'], 'test.csv');
-      await userEvent.upload(fileInput, csvFile);
+      await user.upload(fileInput, csvFile);
 
       // Error should be displayed
 
       // Upload valid file
       const validFile = new File(['test'], 'valid.xlsx');
-      await userEvent.upload(fileInput, validFile);
+      await user.upload(fileInput, validFile);
 
       // Error should be cleared
     });
@@ -191,6 +198,7 @@ describe('UploadArea Component', () => {
 
   describe('File Validation Integration', () => {
     it('accepts .xlsx files only', async () => {
+      const user = userEvent.setup();
       const onFile = vi.fn();
       const { container } = render(<UploadArea onFile={onFile} />);
 
@@ -200,12 +208,13 @@ describe('UploadArea Component', () => {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
 
-      await userEvent.upload(fileInput, validFile);
+      await user.upload(fileInput, validFile);
 
       expect(onFile).toHaveBeenCalledWith(validFile);
     });
 
     it('rejects files larger than 10MB', async () => {
+      const user = userEvent.setup();
       const onFile = vi.fn();
       const { container } = render(<UploadArea onFile={onFile} />);
 
@@ -219,7 +228,7 @@ describe('UploadArea Component', () => {
         }
       );
 
-      await userEvent.upload(fileInput, largeFile);
+      await user.upload(fileInput, largeFile);
 
       // Should not call onFile for oversized file
     });
@@ -228,10 +237,9 @@ describe('UploadArea Component', () => {
   describe('Default Props', () => {
     it('renders with disabled=false by default', () => {
       const onFile = vi.fn();
-      render(<UploadArea onFile={onFile} />);
-
-      // Component should be enabled by default
-      expect(true); // Placeholder
+      const { container } = render(<UploadArea onFile={onFile} />);
+      const fileInput = container.querySelector('input[type="file"]');
+      expect(fileInput).not.toBeDisabled();
     });
   });
 });
