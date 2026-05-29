@@ -276,7 +276,8 @@ describe('ErrorBanner Component', () => {
         />
       );
 
-      expect(screen.getByText(/File validation failed/)).toBeInTheDocument();
+      expect(screen.getByText('File validation failed', { exact: true })).toBeInTheDocument();
+      expect(screen.getByText('Row 5: Date column contains invalid format')).toBeInTheDocument();
     });
 
     it('displays file size errors', () => {
@@ -289,7 +290,8 @@ describe('ErrorBanner Component', () => {
         />
       );
 
-      expect(screen.getByText(/File too large/)).toBeInTheDocument();
+      expect(screen.getByText('File too large', { exact: true })).toBeInTheDocument();
+      expect(screen.getByText('File size exceeds 10 MB limit')).toBeInTheDocument();
     });
 
     it('displays XIRR calculation errors', () => {
@@ -316,7 +318,8 @@ describe('ErrorBanner Component', () => {
         />
       );
 
-      expect(screen.getByText(/Unable to reach/)).toBeInTheDocument();
+      expect(screen.getByText('Unable to reach the server')).toBeInTheDocument();
+      expect(screen.getByText('Please check your connection and try again.')).toBeInTheDocument();
     });
   });
 

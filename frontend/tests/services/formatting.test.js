@@ -82,7 +82,7 @@ describe('Formatting Service', () => {
 
   describe('formatPercentage()', () => {
     it('formats decimal as percentage with 2 decimal places', () => {
-      expect(formatPercentage(0.1254)).toBe('12.54%');
+      expect(formatPercentage(12.54)).toBe('12.54%');
     });
 
     it('formats zero correctly', () => {
@@ -90,19 +90,19 @@ describe('Formatting Service', () => {
     });
 
     it('formats negative percentages', () => {
-      expect(formatPercentage(-0.0525)).toBe('-5.25%');
+      expect(formatPercentage(-5.25)).toBe('-5.25%');
     });
 
     it('formats percentages less than 1%', () => {
-      expect(formatPercentage(0.005)).toBe('0.50%');
+      expect(formatPercentage(0.50)).toBe('0.50%');
     });
 
     it('formats very small percentages', () => {
-      expect(formatPercentage(0.0001)).toBe('0.01%');
+      expect(formatPercentage(0.01)).toBe('0.01%');
     });
 
     it('formats percentages greater than 100%', () => {
-      expect(formatPercentage(1.5)).toBe('150.00%');
+      expect(formatPercentage(150.00)).toBe('150.00%');
     });
 
     it('returns sentinel for null', () => {
@@ -114,8 +114,8 @@ describe('Formatting Service', () => {
     });
 
     it('handles numeric string input (converts via Number())', () => {
-      // JavaScript coercion: Number('0.25') * 100 = 25
-      expect(formatPercentage('0.25')).toBe('25.00%');
+      // JavaScript coercion: Number('25.00')
+      expect(formatPercentage('25.00')).toBe('25.00%');
     });
   });
 
