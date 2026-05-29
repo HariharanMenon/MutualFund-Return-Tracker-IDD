@@ -258,3 +258,4 @@ desktop.ini
 # =============================================================================
 backend/tests/coverage/
 frontend/tests/coverage/
+test-output.txt
