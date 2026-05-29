@@ -302,7 +302,8 @@ describe('ErrorBanner Component', () => {
         />
       );
 
-      expect(screen.getByText(/Cannot calculate XIRR/)).toBeInTheDocument();
+      expect(screen.getByText('Cannot calculate XIRR', { exact: true })).toBeInTheDocument();
+      expect(screen.getByText('Cannot calculate XIRR for this data')).toBeInTheDocument();
     });
 
     it('displays network errors', () => {
