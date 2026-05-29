@@ -8,19 +8,19 @@ import XirrDisplay from '../../src/components/XirrDisplay.jsx';
 describe('XirrDisplay Component', () => {
   describe('Rendering', () => {
     it('renders XIRR value with percentage symbol', () => {
-      render(<XirrDisplay value={0.1254} />);
+      render(<XirrDisplay value={12.54} />);
 
       expect(screen.getByText(/12\.54%/)).toBeInTheDocument();
     });
 
     it('displays "XIRR:" label', () => {
-      render(<XirrDisplay value={0.1254} />);
+      render(<XirrDisplay value={12.54} />);
 
       expect(screen.getByText('XIRR')).toBeInTheDocument();
     });
 
     it('renders with large font size (36px+)', () => {
-      const { container } = render(<XirrDisplay value={0.1254} />);
+      const { container } = render(<XirrDisplay value={12.54} />);
 
       const xirrElement = container.querySelector('[class*="xirr-value"]') || 
                           container.firstChild;
@@ -32,7 +32,7 @@ describe('XirrDisplay Component', () => {
 
   describe('Positive XIRR', () => {
     it('displays positive XIRR in green', () => {
-      const { container } = render(<XirrDisplay value={0.15} />);
+      const { container } = render(<XirrDisplay value={15} />);
 
       const xirrElement = container.querySelector('[class*="positive"]') || 
                           container.firstChild;
@@ -41,13 +41,13 @@ describe('XirrDisplay Component', () => {
     });
 
     it('shows up arrow (↑) for positive XIRR', () => {
-      render(<XirrDisplay value={0.15} />);
+      render(<XirrDisplay value={15} />);
 
       expect(screen.getByText(/↑|up|arrow|positive/i)).toBeInTheDocument();
     });
 
     it('formats positive XIRR correctly', () => {
-      render(<XirrDisplay value={0.2075} />);
+      render(<XirrDisplay value={20.75} />);
 
       expect(screen.getByText(/20\.75%/)).toBeInTheDocument();
     });
@@ -61,7 +61,7 @@ describe('XirrDisplay Component', () => {
 
   describe('Negative XIRR', () => {
     it('displays negative XIRR in red', () => {
-      const { container } = render(<XirrDisplay value={-0.15} />);
+      const { container } = render(<XirrDisplay value={-15} />);
 
       const xirrElement = container.querySelector('[class*="negative"]') || 
                           container.firstChild;
@@ -70,19 +70,19 @@ describe('XirrDisplay Component', () => {
     });
 
     it('shows down arrow (↓) for negative XIRR', () => {
-      render(<XirrDisplay value={-0.15} />);
+      render(<XirrDisplay value={-15} />);
 
       expect(screen.getByText(/↓|down|arrow|negative/i)).toBeInTheDocument();
     });
 
     it('formats negative XIRR correctly', () => {
-      render(<XirrDisplay value={-0.0525} />);
+      render(<XirrDisplay value={-5.25} />);
 
       expect(screen.getByText(/-5\.25%/)).toBeInTheDocument();
     });
 
     it('formats very large negative losses', () => {
-      render(<XirrDisplay value={-0.85} />);
+      render(<XirrDisplay value={-85} />);
 
       expect(screen.getByText(/-85\.00%/)).toBeInTheDocument();
     });
@@ -90,25 +90,25 @@ describe('XirrDisplay Component', () => {
 
   describe('Percentage Formatting', () => {
     it('formats XIRR to exactly 2 decimal places', () => {
-      render(<XirrDisplay value={0.1} />);
+      render(<XirrDisplay value={10} />);
 
       expect(screen.getByText(/10\.00%/)).toBeInTheDocument();
     });
 
     it('handles very small positive percentages', () => {
-      render(<XirrDisplay value={0.0001} />);
+      render(<XirrDisplay value={0.01} />);
 
       expect(screen.getByText(/0\.01%/)).toBeInTheDocument();
     });
 
     it('handles very large percentages', () => {
-      render(<XirrDisplay value={2.5} />);
+      render(<XirrDisplay value={250} />);
 
       expect(screen.getByText(/250\.00%/)).toBeInTheDocument();
     });
 
     it('pads with zeros for decimals less than 2', () => {
-      render(<XirrDisplay value={0.05} />);
+      render(<XirrDisplay value={5} />);
 
       expect(screen.getByText(/5\.00%/)).toBeInTheDocument();
     });
@@ -140,7 +140,7 @@ describe('XirrDisplay Component', () => {
 
   describe('Subtext', () => {
     it('displays "Return on Investment" subtext', () => {
-      render(<XirrDisplay value={0.1254} />);
+      render(<XirrDisplay value={12.54} />);
 
       expect(screen.getByText(/return on investment/i)).toBeInTheDocument();
     });
@@ -148,7 +148,7 @@ describe('XirrDisplay Component', () => {
 
   describe('Accessibility', () => {
     it('has proper semantic HTML for screen readers', () => {
-      const { container } = render(<XirrDisplay value={0.1254} />);
+      const { container } = render(<XirrDisplay value={12.54} />);
 
       // Should have descriptive text for screen readers
       const xirrText = screen.getByText(/12\.54%/);
@@ -156,7 +156,7 @@ describe('XirrDisplay Component', () => {
     });
 
     it('includes aria-label for users with visual impairments', () => {
-      const { container } = render(<XirrDisplay value={0.15} />);
+      const { container } = render(<XirrDisplay value={15} />);
 
       const elem = container.querySelector('[aria-label*="15"]') ||
                    container.querySelector('[role="img"]');
