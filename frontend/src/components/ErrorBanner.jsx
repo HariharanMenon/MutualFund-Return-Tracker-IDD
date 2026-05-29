@@ -5,18 +5,18 @@ import './ErrorBanner.css';
  *
  * Props:
  *   message  {string}           Short heading error message
- *   detail   {string|null}      Optional detailed explanation from API
+ *   details  {string|null}      Optional detailed explanation from API or validation
  *   onRetry  {() => void}       Called when user clicks "Try Again"
  */
-export default function ErrorBanner({ message, detail, onRetry }) {
+export default function ErrorBanner({ message, details, onRetry }) {
   return (
     <div className="error-banner" role="alert" aria-live="assertive">
       <div className="error-banner__icon" aria-hidden="true">✕</div>
       <div className="error-banner__body">
         <p className="error-banner__heading">File Upload Failed</p>
         <p className="error-banner__message">{message}</p>
-        {detail && (
-          <p className="error-banner__detail">{detail}</p>
+        {details && (
+          <p className="error-banner__detail">{details}</p>
         )}
       </div>
       <button

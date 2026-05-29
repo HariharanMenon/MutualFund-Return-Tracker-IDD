@@ -105,7 +105,7 @@ export default function App() {
           <section className="error-section">
             <ErrorBanner
               message={error.message}
-              details={error.detail}
+              details={error.details}
               onRetry={reset}
             />
           </section>

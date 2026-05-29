@@ -70,7 +70,7 @@ export default function useFileUpload() {
     if (!isValidFileType(file)) {
       setError({
         message: 'File validation failed',
-        detail: `Only .xlsx files are accepted.`,
+        details: `Only .xlsx files are accepted.`,
       });
       setState('error');
       return;
@@ -79,7 +79,7 @@ export default function useFileUpload() {
     if (!isValidFileSize(file)) {
       setError({
         message: 'File validation failed',
-        detail: `File is too large. Maximum allowed size is 10 MB.`,
+        details: `File is too large. Maximum allowed size is 10 MB.`,
       });
       setState('error');
       return;
@@ -119,7 +119,7 @@ export default function useFileUpload() {
       if (!isMountedRef.current) return;
       setError({
         message: err.message || 'Upload failed',
-        detail: err.detail || null,
+        details: err.detail || null,
       });
       setState('error');
       logger.error('File upload failed');

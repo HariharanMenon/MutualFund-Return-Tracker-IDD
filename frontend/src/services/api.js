@@ -48,7 +48,7 @@ export async function uploadFile(file) {
     logger.warn('Upload failed:', response.status, message);
     const err = new Error(message);
     err.status = response.status;
-    err.detail = data?.error?.detail ?? null;
+    err.detail = data?.error?.details ?? null;
     throw err;
   }
 
