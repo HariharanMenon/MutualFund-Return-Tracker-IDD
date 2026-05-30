@@ -3,7 +3,7 @@
 **Version:** 2.0  
 **Date:** March 19, 2026  
 **Last Updated:** May 30, 2026
-**Revision:** Updated progress
+**Revision:** Updated progress and brought in sync scripts section
 **Context:** Stateless, in-memory file processing on Render free tier (single instance, cold-start delays acceptable)
 ---
 
@@ -17,7 +17,7 @@ MutualFund-Return-Tracker-IDD/
 ├── LICENSE                                # Open source license (MIT/Apache)
 │
 ├── intent/                                # Intent & Product Structure Documentation
-│   ├── README.md                          # Intent folder guide
+│   ├── intent_README.md                   # Intent folder guide
 │   ├── mutual-fund-xirr-tracker-feature.md # Feature intent document (v1.0)
 │   └── product-structure.md               # This file: Product structure & architecture
 │
@@ -176,11 +176,16 @@ MutualFund-Return-Tracker-IDD/
 │       └── frontend-tests.yml             # GitHub Actions: npm test on push
 │
 ├── scripts/                               # Utility scripts
-│   ├── setup.sh                           # One-command dev environment setup
-│   ├── start-dev.sh                       # Start both servers locally
-│   ├── test-all.sh                        # Run all tests (backend + frontend)
-│   ├── build-frontend.sh                  # Build React (Render auto-runs)
-│   └── clean.sh                           # Clean venv, node_modules, caches
+│   ├── setup.sh                           # One-command dev environment setup (Mac/Linux)
+│   ├── start-dev.sh                       # Start both servers locally (Mac/Linux)
+│   ├── test-all.sh                        # Run all tests (Mac/Linux)
+│   ├── build-frontend.sh                  # Build React for production (Mac/Linux)
+│   ├── clean.sh                           # Clean venv, node_modules, caches (Mac/Linux)
+│   ├── setup.ps1                          # One-command dev environment setup (Windows)
+│   ├── start-dev.ps1                      # Start both servers locally (Windows)
+│   ├── test-all.ps1                       # Run all tests (Windows)
+│   ├── build-frontend.ps1                 # Build React for production (Windows)
+│   └── clean.ps1                          # Clean venv, node_modules, caches (Windows)
 │
 ├── render.yaml                            # Render deployment spec (backend + frontend)
 ├── .env.example                           # Root-level env template
@@ -595,354 +600,347 @@ This document should include:
 
 **`setup.sh`** – One-command setup
 ```bash
-#!/bin/bash
+#!/usr/bin/env bash
+# setup.sh — One-command dev environment setup (Mac / Linux)
+# Usage: bash scripts/setup.sh
+# Run from the repository root.
 
-# MutualFund-Return-Tracker-IDD Setup Script
-# Platform: Unix/Linux/macOS
-# Purpose: One-command setup for development environment
+set -euo pipefail
 
-set -e  # Exit immediately if any command fails
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT"
 
-# Color codes for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+echo "==> Setting up backend Python virtual environment..."
+# .venv lives at the repository root; requirements.txt is in backend/
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip --quiet
+pip install -r backend/requirements.txt --quiet
+deactivate
+echo "    Backend .venv ready."
+
+echo "==> Setting up frontend Node.js dependencies..."
+cd "$REPO_ROOT/frontend"
+npm install --silent
+echo "    Frontend node_modules ready."
 
 echo ""
-echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}MutualFund-Return-Tracker-IDD Setup${NC}"
-echo -e "${BLUE}========================================${NC}"
-echo ""
-
-# ============================================
-# Step 1: Check Prerequisites
-# ============================================
-echo -e "${YELLOW}Step 1: Checking prerequisites...${NC}"
-
-if ! command -v python3 &> /dev/null; then
-    echo -e "${RED}❌ Error: python3 not found${NC}"
-    echo "Please install Python 3.11.7 or higher"
-    exit 1
-fi
-
-if ! command -v npm &> /dev/null; then
-    echo -e "${RED}❌ Error: npm not found${NC}"
-    echo "Please install Node.js and npm"
-    exit 1
-fi
-
-echo -e "${GREEN}✓ Python 3 and npm found${NC}"
-echo ""
-
-# ============================================
-# Step 2: Create Python Virtual Environment
-# ============================================
-echo -e "${YELLOW}Step 2: Creating Python virtual environment...${NC}"
-
-if [ -d ".venv" ]; then
-    echo "Virtual environment already exists at .venv"
-else
-    python3 -m venv .venv || { echo -e "${RED}❌ Failed${NC}"; exit 1; }
-    echo -e "${GREEN}✓ Virtual environment created at .venv${NC}"
-fi
-
-# ============================================
-# Step 3: Install Backend Dependencies
-# ============================================
-echo -e "${YELLOW}Step 3: Installing backend dependencies...${NC}"
-
-source .venv/bin/activate || { echo -e "${RED}❌ Failed to activate venv${NC}"; exit 1; }
-
-pip install --upgrade pip > /dev/null 2>&1
-pip install -r ./backend/requirements.txt || { echo -e "${RED}❌ Failed${NC}"; exit 1; }
-echo -e "${GREEN}✓ Backend dependencies installed${NC}"
-echo ""
-
-# ============================================
-# Step 4: Install Frontend Dependencies
-# ============================================
-echo -e "${YELLOW}Step 4: Installing frontend dependencies...${NC}"
-
-cd frontend && npm install && cd .. || { echo -e "${RED}❌ Failed${NC}"; exit 1; }
-echo -e "${GREEN}✓ Frontend dependencies installed${NC}"
-echo ""
-
-# ============================================
-# Setup Complete
-# ============================================
-echo -e "${GREEN}========================================${NC}"
-echo -e "${GREEN}✅ Setup Complete!${NC}"
-echo -e "${GREEN}========================================${NC}"
-echo ""
-echo "Next steps:"
-echo "1. Activate venv: source .venv/bin/activate"
-echo "2. Start servers: ./scripts/start-dev.sh"
-echo "3. Backend API: http://localhost:8000/docs"
-echo "4. Frontend: http://localhost:5173"
-echo ""
+echo "Setup complete. To start both servers run:"
+echo "  bash scripts/start-dev.sh"
 ```
 
 **`start-dev.sh`** – Start both servers
 ```bash
-#!/bin/bash
+#!/usr/bin/env bash
+# start-dev.sh — Start backend + frontend dev servers concurrently (Mac / Linux)
+# Usage: bash scripts/start-dev.sh
+# Run from the repository root.
+# Press Ctrl-C to stop both servers.
 
-# MutualFund-Return-Tracker-IDD Development Servers
-# Platform: Unix/Linux/macOS
-# Purpose: Start both backend (FastAPI) and frontend (React) servers
+set -euo pipefail
 
-set -e
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-echo "Checking virtual environment..."
-[ -d ".venv" ] || { echo "Error: Run ./scripts/setup.sh first"; exit 1; }
+cleanup() {
+    echo ""
+    echo "==> Stopping servers..."
+    kill "$BACKEND_PID" "$FRONTEND_PID" 2>/dev/null || true
+    wait "$BACKEND_PID" "$FRONTEND_PID" 2>/dev/null || true
+    echo "    Done."
+}
+trap cleanup EXIT INT TERM
 
-echo "Activating virtual environment..."
-source .venv/bin/activate || { echo "Error: Failed to activate venv"; exit 1; }
-
-echo "Starting backend server on http://localhost:8000..."
-cd backend
+echo "==> Starting backend on http://localhost:8000 ..."
+# .venv is at the repository root; activate before cd-ing into backend/.
+if [ -f "$REPO_ROOT/.venv/bin/activate" ]; then
+    source "$REPO_ROOT/.venv/bin/activate"
+fi
+cd "$REPO_ROOT/backend"
 uvicorn main:app --reload --host 127.0.0.1 --port 8000 &
 BACKEND_PID=$!
-cd ..
 
-echo "Starting frontend server on http://localhost:5173..."
-cd frontend
+echo "==> Starting frontend on http://localhost:5173 ..."
+cd "$REPO_ROOT/frontend"
 npm run dev &
 FRONTEND_PID=$!
-cd ..
 
 echo ""
-echo "✅ Both servers running!"
-echo "Backend:  http://localhost:8000"
-echo "Frontend: http://localhost:5173"
-echo "Docs:     http://localhost:8000/docs"
-echo ""
-echo "Press Ctrl+C to stop all servers"
-echo ""
-
-trap "kill $BACKEND_PID $FRONTEND_PID 2>/dev/null; exit 0" INT
+echo "Both servers running. Press Ctrl-C to stop."
 wait
 ```
 
 **`test-all.sh`** – Run all tests
 ```bash
-#!/bin/bash
+#!/usr/bin/env bash
+# test-all.sh — Run backend pytest + frontend vitest (Mac / Linux)
+# Usage: bash scripts/test-all.sh
+# Run from the repository root.
+# Exits non-zero if any test suite fails.
 
-# MutualFund-Return-Tracker-IDD Test Suite
-# Platform: Unix/Linux/macOS
+set -euo pipefail
 
-set -e
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+FAILED=0
 
-echo "Checking virtual environment..."
-[ -d ".venv" ] || { echo "Error: Run ./scripts/setup.sh first"; exit 1; }
-
-echo "Activating virtual environment..."
-source .venv/bin/activate || { echo "Error: Failed to activate venv"; exit 1; }
-
-echo ""
-echo "Running backend tests..."
-cd backend
-python -m pytest tests/ -v --tb=short || { echo "Backend tests failed"; exit 1; }
-cd ..
-
-echo ""
-echo "Running frontend tests..."
-cd frontend
-npm test -- --run || { echo "Frontend tests failed"; exit 1; }
-cd ..
+echo "=============================="
+echo " Backend tests (pytest)"
+echo "=============================="
+# .venv is at the repository root; activate before cd-ing into backend/.
+if [ -f "$REPO_ROOT/.venv/bin/activate" ]; then
+    source "$REPO_ROOT/.venv/bin/activate"
+fi
+cd "$REPO_ROOT/backend"
+python -m pytest tests/ -v || FAILED=1
 
 echo ""
-echo "✅ All tests passed!"
+echo "=============================="
+echo " Frontend tests (vitest)"
+echo "=============================="
+cd "$REPO_ROOT/frontend"
+npm run test || FAILED=1
+
+echo ""
+if [ "$FAILED" -eq 0 ]; then
+    echo "All tests passed."
+else
+    echo "One or more test suites FAILED." >&2
+    exit 1
+fi
 ```
 
 **`build-frontend.sh`** – Build for production
 ```bash
-#!/bin/bash
+#!/usr/bin/env bash
+# build-frontend.sh — Build the React + Vite frontend for production (Mac / Linux)
+# Usage: bash scripts/build-frontend.sh
+# Run from the repository root.
+# Output: frontend/dist/  (Render deploys this directory as a static site)
 
-# MutualFund-Return-Tracker-IDD Frontend Build
-# Platform: Unix/Linux/macOS
+set -euo pipefail
 
-set -e
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-echo "Building frontend for production..."
-[ -d "frontend" ] || { echo "Error: frontend directory not found"; exit 1; }
-[ -f "frontend/package.json" ] || { echo "Error: package.json not found"; exit 1; }
-
-cd frontend
-npm run build || { echo "Build failed"; exit 1; }
-cd ..
-
-[ -d "frontend/dist" ] || { echo "Error: Build output not found"; exit 1; }
-
-echo ""
-echo "✅ Frontend build complete!"
-echo "Build output: frontend/dist"
-echo "Ready for deployment to Render"
+echo "==> Building frontend..."
+cd "$REPO_ROOT/frontend"
+npm install --silent
+npm run build
+echo "    Build complete. Output: frontend/dist/"
 ```
 
 #### **For Windows**
 
-**`setup.bat`** – One-command setup
-```batch
-@echo off
-REM MutualFund-Return-Tracker-IDD Setup Script (Windows)
+**`setup.ps1`** – One-command setup
+```powershell
+# setup.ps1 — One-command dev environment setup (Windows PowerShell)
+# Usage: .\scripts\setup.ps1
+# Run from the repository root.
 
-setlocal enabledelayedexpansion
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
 
-cls
-echo.
-echo ========================================
-echo MutualFund-Return-Tracker-IDD Setup
-echo ========================================
-echo.
+$RepoRoot = Split-Path -Parent $PSScriptRoot
 
-echo Step 1: Checking prerequisites...
-python --version >nul 2>&1 || (echo Error: python not found & pause & exit /b 1)
-npm --version >nul 2>&1 || (echo Error: npm not found & pause & exit /b 1)
-echo [OK] Python and npm found
-echo.
+Write-Host "==> Setting up backend Python virtual environment..."
+# .venv lives at the repository root; requirements.txt is in backend/
+python -m venv "$RepoRoot\.venv"
+& "$RepoRoot\.venv\Scripts\Activate.ps1"
+python -m pip install --upgrade pip --quiet
+pip install -r "$RepoRoot\backend\requirements.txt" --quiet
+deactivate
+Write-Host "    Backend .venv ready."
 
-echo Step 2: Creating virtual environment...
-if exist .venv (
-    echo Virtual environment already exists at .venv
-) else (
-    python -m venv .venv || (echo Error: Failed to create venv & pause & exit /b 1)
-    echo [OK] Virtual environment created
-)
-echo.
+Write-Host "==> Setting up frontend Node.js dependencies..."
+Push-Location "$RepoRoot\frontend"
+try {
+    npm install --silent
+    Write-Host "    Frontend node_modules ready."
+}
+finally {
+    Pop-Location
+}
 
-echo Step 3: Installing backend dependencies...
-call .venv\Scripts\activate.bat || (echo Error: Failed to activate & pause & exit /b 1)
-python -m pip install --upgrade pip >nul 2>&1
-pip install -r backend\requirements.txt || (echo Error: Failed & pause & exit /b 1)
-echo [OK] Backend dependencies installed
-echo.
-
-echo Step 4: Installing frontend dependencies...
-cd frontend
-call npm install || (cd .. & echo Error: Failed & pause & exit /b 1)
-cd ..
-echo [OK] Frontend dependencies installed
-echo.
-
-cls
-echo.
-echo ========================================
-echo [OK] Setup Complete!
-echo ========================================
-echo.
-echo Next steps:
-echo 1. Activate venv: .venv\Scripts\activate
-echo 2. Start servers: scripts\start-dev.bat
-echo 3. Backend API: http://localhost:8000/docs
-echo 4. Frontend: http://localhost:5173
-echo.
-pause
+Write-Host ""
+Write-Host "Setup complete. To start both servers run:"
+Write-Host "  .\scripts\start-dev.ps1"
 ```
 
-**`start-dev.bat`** – Start both servers
-```batch
-@echo off
-REM MutualFund-Return-Tracker-IDD Development Servers (Windows)
+**`start-dev.ps1`** – Start both servers
+```powershell
+# start-dev.ps1 — Start backend + frontend dev servers (Windows PowerShell)
+# Usage: .\scripts\start-dev.ps1
+# Run from the repository root.
+# Opens the backend in the current terminal and the frontend in a new window.
+# Press Ctrl-C in each terminal to stop.
 
-setlocal enabledelayedexpansion
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
 
-cls
-echo.
-echo ========================================
-echo Starting Development Servers
-echo ========================================
-echo.
+$RepoRoot = Split-Path -Parent $PSScriptRoot
 
-if not exist .venv (echo Error: Run scripts\setup.bat first & pause & exit /b 1)
+Write-Host "==> Starting backend on http://localhost:8000 ..."
+# .venv is at the repository root; the new window activates it before running uvicorn.
+$BackendCmd = if (Test-Path "$RepoRoot\.venv\Scripts\Activate.ps1") {
+    "& '$RepoRoot\.venv\Scripts\Activate.ps1'; uvicorn main:app --reload --host 127.0.0.1 --port 8000"
+} else {
+    "uvicorn main:app --reload --host 127.0.0.1 --port 8000"
+}
 
-call .venv\Scripts\activate.bat || (echo Error: Failed to activate & pause & exit /b 1)
+$BackendProcess = Start-Process powershell -ArgumentList (
+    "-NoExit", "-Command",
+    "Set-Location '$RepoRoot\backend'; $BackendCmd"
+) -PassThru
 
-echo Starting backend server on http://localhost:8000...
-start "Backend" cmd /k "cd backend && python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000"
+Write-Host "==> Starting frontend on http://localhost:5173 ..."
+$FrontendProcess = Start-Process powershell -ArgumentList (
+    "-NoExit", "-Command",
+    "Set-Location '$RepoRoot\frontend'; npm run dev"
+) -PassThru
 
-timeout /t 2 /nobreak
+Write-Host ""
+Write-Host "Both servers launched in separate windows."
+Write-Host "Backend PID : $($BackendProcess.Id)"
+Write-Host "Frontend PID: $($FrontendProcess.Id)"
+Write-Host ""
+Write-Host "Press ENTER here to stop both servers, or close their windows manually."
+$null = Read-Host
 
-echo Starting frontend server on http://localhost:5173...
-start "Frontend" cmd /k "cd frontend && npm run dev"
-
-echo.
-echo [OK] Both servers running!
-echo Backend:  http://localhost:8000
-echo Frontend: http://localhost:5173
-echo Docs:     http://localhost:8000/docs
-echo.
-echo Close the terminal windows to stop the servers.
-echo.
-pause
+Write-Host "==> Stopping servers..."
+Stop-Process -Id $BackendProcess.Id  -Force -ErrorAction SilentlyContinue
+Stop-Process -Id $FrontendProcess.Id -Force -ErrorAction SilentlyContinue
+Write-Host "    Done."
 ```
 
-**`test-all.bat`** – Run all tests
-```batch
-@echo off
-REM MutualFund-Return-Tracker-IDD Test Suite (Windows)
+**`test-all.ps1`** – Run all tests
+```powershell
+# test-all.ps1 — Run backend pytest + frontend vitest (Windows PowerShell)
+# Usage: .\scripts\test-all.ps1
+# Run from the repository root.
+# Exits with code 1 if any test suite fails.
 
-setlocal enabledelayedexpansion
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
 
-cls
-echo.
-echo ========================================
-echo Running All Tests
-echo ========================================
-echo.
+$RepoRoot = Split-Path -Parent $PSScriptRoot
+$Failed   = $false
 
-if not exist .venv (echo Error: Run scripts\setup.bat first & pause & exit /b 1)
+Write-Host "=============================="
+Write-Host " Backend tests (pytest)"
+Write-Host "=============================="
+# .venv is at the repository root; activate before pushing into backend/.
+if (Test-Path "$RepoRoot\.venv\Scripts\Activate.ps1") {
+    & "$RepoRoot\.venv\Scripts\Activate.ps1"
+}
+Push-Location "$RepoRoot\backend"
+try {
+    python -m pytest tests/ -v
+    if ($LASTEXITCODE -ne 0) { $Failed = $true }
+    if (Get-Command deactivate -ErrorAction SilentlyContinue) { deactivate }
+}
+catch {
+    Write-Warning "Backend tests raised an exception: $_"
+    $Failed = $true
+}
+finally {
+    Pop-Location
+}
 
-call .venv\Scripts\activate.bat || (echo Error: Failed to activate & pause & exit /b 1)
+Write-Host ""
+Write-Host "=============================="
+Write-Host " Frontend tests (vitest)"
+Write-Host "=============================="
+Push-Location "$RepoRoot\frontend"
+try {
+    npm run test
+    if ($LASTEXITCODE -ne 0) { $Failed = $true }
+}
+catch {
+    Write-Warning "Frontend tests raised an exception: $_"
+    $Failed = $true
+}
+finally {
+    Pop-Location
+}
 
-echo Running backend tests...
-cd backend
-python -m pytest tests/ -v --tb=short || (cd .. & echo Error: Backend tests failed & pause & exit /b 1)
-cd ..
-
-echo.
-echo Running frontend tests...
-cd frontend
-call npm test -- --run || (cd .. & echo Error: Frontend tests failed & pause & exit /b 1)
-cd ..
-
-echo.
-echo [OK] All tests passed!
-echo.
-pause
+Write-Host ""
+if (-not $Failed) {
+    Write-Host "All tests passed."
+} else {
+    Write-Error "One or more test suites FAILED."
+    exit 1
+}
 ```
 
-**`build-frontend.bat`** – Build for production
-```batch
-@echo off
-REM MutualFund-Return-Tracker-IDD Frontend Build (Windows)
+**`build-frontend.ps1`** – Build for production
+```powershell
+# build-frontend.ps1 — Build the React + Vite frontend for production (Windows PowerShell)
+# Usage: .\scripts\build-frontend.ps1
+# Run from the repository root.
+# Output: frontend\dist\  (Render deploys this directory as a static site)
 
-setlocal enabledelayedexpansion
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
 
-cls
-echo.
-echo ========================================
-echo Building Frontend for Production
-echo ========================================
-echo.
+$RepoRoot = Split-Path -Parent $PSScriptRoot
 
-if not exist frontend (echo Error: frontend directory not found & pause & exit /b 1)
-if not exist frontend\package.json (echo Error: package.json not found & pause & exit /b 1)
+Write-Host "==> Building frontend..."
+Push-Location "$RepoRoot\frontend"
+try {
+    npm install --silent
+    npm run build
+    Write-Host "    Build complete. Output: frontend\dist\"
+}
+finally {
+    Pop-Location
+}
+```
 
-echo Building...
-cd frontend
-call npm run build || (cd .. & echo Error: Build failed & pause & exit /b 1)
-cd ..
+**`clean.ps1`** – Remove generated artefacts
+```powershell
+# clean.ps1 — Remove generated artefacts (Windows PowerShell)
+# Usage: .\scripts\clean.ps1
+# Run from the repository root.
+# Removes: .venv\ (root), frontend\node_modules, frontend\dist,
+#           __pycache__ trees, .pytest_cache, vitest cache.
 
-if not exist frontend\dist (echo Error: Build output not found & pause & exit /b 1)
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
 
-echo.
-echo [OK] Frontend build complete!
-echo Build output: frontend\dist
-echo Ready for deployment to Render
-echo.
-pause
+$RepoRoot = Split-Path -Parent $PSScriptRoot
+
+function Remove-IfExists {
+    param([string]$Path)
+    if (Test-Path $Path) {
+        Remove-Item $Path -Recurse -Force
+        Write-Host "    Removed: $Path"
+    }
+}
+
+Write-Host "==> Removing Python virtual environment (root\.venv)..."
+Remove-IfExists "$RepoRoot\.venv"
+
+Write-Host "==> Removing Python cache files..."
+Get-ChildItem -Path $RepoRoot -Filter "__pycache__" -Recurse -Directory -ErrorAction SilentlyContinue |
+    Where-Object { $_.FullName -notmatch '\\.git\\' } |
+    ForEach-Object { Remove-Item $_.FullName -Recurse -Force }
+
+Get-ChildItem -Path $RepoRoot -Filter ".pytest_cache" -Recurse -Directory -ErrorAction SilentlyContinue |
+    Where-Object { $_.FullName -notmatch '\\.git\\' } |
+    ForEach-Object { Remove-Item $_.FullName -Recurse -Force }
+
+Get-ChildItem -Path $RepoRoot -Filter "*.pyc" -Recurse -File -ErrorAction SilentlyContinue |
+    Where-Object { $_.FullName -notmatch '\\.git\\' } |
+    ForEach-Object { Remove-Item $_.FullName -Force }
+
+Write-Host "==> Removing frontend node_modules..."
+Remove-IfExists "$RepoRoot\frontend\node_modules"
+
+Write-Host "==> Removing frontend build output..."
+Remove-IfExists "$RepoRoot\frontend\dist"
+
+Write-Host "==> Removing frontend test cache..."
+Remove-IfExists "$RepoRoot\frontend\.vitest"
+
+Write-Host "Clean complete."
 ```
 
 ---
@@ -1063,8 +1061,8 @@ services:
 - Phase 3 (Maturity): Add user accounts, persistent storage, multi-fund support
 
 ### ✅ **Developer Experience**
-- Single `setup.sh` script
-- Single `start-dev.sh` script
+- Single `setup.sh` / `setup.ps1` script (Mac/Linux and Windows)
+- Single `start-dev.sh` / `start-dev.ps1` script (Mac/Linux and Windows)
 - Clear folder naming (services/, components/, hooks/)
 - Documented in `/intent` and `/docs`
 
@@ -1073,16 +1071,35 @@ services:
 ## Development Workflow
 
 ### **Local Development**
+
+**Mac/Linux**
 ```bash
 # Clone repo
 git clone <repo-url>
 cd MutualFund-Return-Tracker-IDD
 
 # Setup
-./scripts/setup.sh
+bash scripts/setup.sh
 
 # Start servers
-./scripts/start-dev.sh
+bash scripts/start-dev.sh
+
+# Backend: http://localhost:8000/docs (Swagger)
+# Frontend: http://localhost:5173
+# API: http://localhost:8000/api/upload
+```
+
+**Windows (PowerShell)**
+```powershell
+# Clone repo
+git clone <repo-url>
+cd MutualFund-Return-Tracker-IDD
+
+# Setup
+.\scripts\setup.ps1
+
+# Start servers
+.\scripts\start-dev.ps1
 
 # Backend: http://localhost:8000/docs (Swagger)
 # Frontend: http://localhost:5173
@@ -1090,20 +1107,34 @@ cd MutualFund-Return-Tracker-IDD
 ```
 
 ### **Testing**
+
+**Mac/Linux**
 ```bash
 # All tests
-./scripts/test-all.sh
+bash scripts/test-all.sh
 
 # Backend only
 cd backend && python -m pytest tests/
 
 # Frontend only
-cd frontend && npm test
+cd frontend && npm run test
+```
+
+**Windows (PowerShell)**
+```powershell
+# All tests
+.\scripts\test-all.ps1
+
+# Backend only
+cd backend; python -m pytest tests/
+
+# Frontend only
+cd frontend; npm run test
 ```
 
 ### **Deployment to Render**
 ```bash
-# Push to GitHub
+# Push to GitHub (same on all platforms)
 git push origin main
 
 # Render auto-deploys (via github integration)
@@ -1150,12 +1181,12 @@ git push origin main
 ## Versioning & Updates
 
 ### **Intent Document (`intent/feature-intent.md`)**
-- Version 1.0 (current, March 19, 2026)
+- Version 2.0 (current, May 30, 2026)
 - Update when feature scope changes
 - Backward-compatible with existing product structure
 
 ### **Product Structure (`intent/product-structure.md`)**
-- Version 1.0 (current, March 19, 2026)
+- Version 2.0 (current, May 30, 2026)
 - Update when folder layout or tech stack changes
 - Independent from intent versioning
 
@@ -1169,18 +1200,47 @@ git push origin main
 ## Quick Reference
 
 ### **Starting Development**
+
+Mac/Linux:
 ```bash
-./scripts/setup.sh && ./scripts/start-dev.sh
+bash scripts/setup.sh && bash scripts/start-dev.sh
+```
+Windows (PowerShell):
+```powershell
+.\scripts\setup.ps1; .\scripts\start-dev.ps1
 ```
 
 ### **Running Tests**
+
+Mac/Linux:
 ```bash
-./scripts/test-all.sh
+bash scripts/test-all.sh
+```
+Windows (PowerShell):
+```powershell
+.\scripts\test-all.ps1
 ```
 
 ### **Building for Render**
+
+Mac/Linux:
 ```bash
-./scripts/build-frontend.sh
+bash scripts/build-frontend.sh
+```
+Windows (PowerShell):
+```powershell
+.\scripts\build-frontend.ps1
+```
+
+### **Cleaning Generated Artefacts**
+
+Mac/Linux:
+```bash
+bash scripts/clean.sh
+```
+Windows (PowerShell):
+```powershell
+.\scripts\clean.ps1
 ```
 
 ### **API Playground**
@@ -1196,7 +1256,7 @@ git push origin main
 ## Success Metrics
 
 - ✅ Product structure mirrors intent document
-- ✅ Development setup <5 minutes with `setup.sh`
+- ✅ Development setup <5 minutes with `setup.sh` (Mac/Linux) or `setup.ps1` (Windows)
 - ✅ Backend tests >80% coverage
 - ✅ Frontend tests >70% coverage
 - ✅ Cold-start UX acceptable (skeleton loader hides delay)
