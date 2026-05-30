@@ -1,7 +1,9 @@
 # Intent Folder
+**Version:** 2  
+**Date:** May 30, 2026  
+**Revision:** Updated progress
 
 ## Overview
-
 The **Intent Folder** (`/intent`) is the centralized documentation hub for the **MutualFund-Return-Tracker-IDD** project. It contains:
 
 - **What we're building** (feature specifications, user needs, success metrics)
@@ -263,11 +265,11 @@ MutualFund-Return-Tracker-IDD/
 
 | Phase | Focus | Owner | Duration | Status |
 |-------|-------|-------|----------|--------|
-| **Phase 1: Setup** | Environment setup, git repo, pre-install checklist | You | ~3 hours | In Progress |
-| **Phase 2: Spec Writing** | API specs, Pydantic models, test fixtures (from feature.md) | You | ~4 hours | Pending |
-| **Phase 3: Backend** | FastAPI setup, file parser, validator, XIRR calculator, tests | You | ~15 hours | Pending |
-| **Phase 4: Frontend** | React components, state management, API integration, styling | You | ~15 hours | Pending |
-| **Phase 5: Local Testing** | Manual testing, edge cases, performance, cross-browser | You | ~4 hours | Pending |
+| **Phase 1: Setup** | Environment setup, git repo, pre-install checklist | You | ~3 hours | Done |
+| **Phase 2: Spec Writing** | API specs, Pydantic models, test fixtures (from feature.md) | You | ~4 hours | Done |
+| **Phase 3: Backend** | FastAPI setup, file parser, validator, XIRR calculator, tests | You | ~15 hours | Done |
+| **Phase 4: Frontend** | React components, state management, API integration, styling | You | ~15 hours | Done |
+| **Phase 5: Local Testing** | Manual testing, edge cases, performance, cross-browser | You | ~4 hours | Done |
 | **Phase 6: Deployment** | Render setup, deploy backend & frontend, CORS config | You | ~3 hours | Pending |
 | **Phase 7: Verification** | Live testing, UAT, docs, launch readiness | You | ~2 hours | Pending |
 
