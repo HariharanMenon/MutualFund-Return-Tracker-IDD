@@ -221,6 +221,22 @@ User Browser
 
 ---
 
+## Performance Targets
+
+The application is designed to meet these success metrics:
+
+| Metric | Target |
+|--------|--------|
+| XIRR calculation | < 5 seconds (excluding Render cold-start) |
+| File parsing + validation | < 2 seconds |
+| Initial page load | < 2 seconds |
+| User error resolution | 90%+ on first attempt (via specific error messages) |
+| XIRR accuracy | Verified against Excel's XIRR function |
+
+See [`intent/mutual-fund-xirr-tracker-feature.md`](intent/mutual-fund-xirr-tracker-feature.md) §14 for details.
+
+---
+
 ## Deployment (Render)
 
 The `render.yaml` blueprint deploys both services:
@@ -278,13 +294,121 @@ MutualFund-Return-Tracker-IDD/
 
 ---
 
-## Intent
+## Intent-Driven Development (IDD)
 
-See [`intent/`](intent/) for the full feature specification and product structure document.
+This project is built using **Intent-Driven Development** — a methodology where every implementation decision is traced back to documented intent.
 
-- [`intent/mutual-fund-xirr-tracker-feature.md`](intent/mutual-fund-xirr-tracker-feature.md) — Feature specification (v2.0)
-- [`intent/product-structure.md`](intent/product-structure.md) — Architecture & directory layout
-- [`intent/Intent_README.md`](intent/Intent_README.md) — Guide to the intent folder
+### What is IDD?
+**Intent-Driven Development** means:
+- **Single source of truth:** All feature requirements, architecture decisions, and design rationale are documented upfront in the [`intent/`](intent/) folder
+- **Traceability:** Every line of code, test, or documentation references the specific intent document sections that justify it
+- **Reduced ambiguity:** Feature specs, architecture docs, and decision logs eliminate guesswork during development
+- **Easier onboarding:** New developers can understand *why* something was built a certain way, not just *how*
+
+### IDD in This Project
+This project maintains three core intent documents:
+| Document | Purpose | Key Sections |
+|----------|---------|--------------|
+| [`mutual-fund-xirr-tracker-feature.md`](intent/mutual-fund-xirr-tracker-feature.md) (v2.0) | Feature specification | User journeys, API contracts, 15 validation rules, edge cases, testing checklist, decision log |
+| [`product-structure.md`](intent/product-structure.md) (v1.0) | Technical architecture | Folder layout, tech stack rationale, Render free tier optimization, development workflow |
+| [`Intent_README.md`](intent/Intent_README.md) | Folder guide | How to read and use intent documents across development phases |
+
+### Benefits
+✅ **For Contributors:** Reference intent docs to understand *why* code is structured a certain way  
+✅ **For Code Review:** Reviewers check that implementations match the documented spec  
+✅ **For Maintenance:** Future enhancements can trace back to original decisions and constraints  
+✅ **For Documentation:** README and inline code comments reference specific intent sections (e.g., "See feature.md §6 for validation rules")
+
+### Getting Started with Intent
+1. **First time?** Start with [`Intent_README.md`](intent/Intent_README.md) — it guides you through the folder
+2. **Building backend?** Reference [`mutual-fund-xirr-tracker-feature.md`](intent/mutual-fund-xirr-tracker-feature.md) for API contracts and validation logic
+3. **Building frontend?** Reference [`mutual-fund-xirr-tracker-feature.md`](intent/mutual-fund-xirr-tracker-feature.md) §4 for UI requirements
+4. **Deploying?** Reference [`product-structure.md`](intent/product-structure.md) for Render configuration and scaling
+
+---
+## Troubleshooting
+
+### Venv activation fails on Windows
+
+**Error:** `Set-ExecutionPolicy : PowerShell script execution is disabled`
+
+**Solution:** Allow PowerShell scripts to run:
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+### CORS errors when calling backend from frontend
+
+**Error:** `Access to XMLHttpRequest blocked by CORS policy`
+
+**Solution:** Verify:
+- Backend is running on port 8000: `http://localhost:8000`
+- Frontend proxy is configured in `vite.config.js`
+- CORS headers are configured in `backend/config.py`
+
+### XIRR calculation fails with convergence error
+
+**Error:** `Cannot calculate XIRR for this data`
+
+**Solution:** Verify your Excel file has:
+- At least 2 transactions (1 buy + 1 redemption minimum)
+- Final transaction is SELL/REDEMPTION with Unit Balance = 0
+- All dates in DD-MMM-YYYY format (e.g., 15-Jan-2020)
+- No missing required columns
+
+See [`intent/mutual-fund-xirr-tracker-feature.md`](intent/mutual-fund-xirr-tracker-feature.md) §6 for complete validation rules.
+
+### Tests fail to run
+
+**Solution:** Ensure you're running from the repository root and have activated the virtual environment:
+```bash
+source .venv/bin/activate           # Mac/Linux
+.venv\Scripts\Activate.ps1          # Windows
+cd backend
+python -m pytest tests/ -v
+```
+
+---
+
+## Future Enhancements
+
+Planned features for v2+:
+
+| Feature | Description | Impact |
+|---------|-------------|--------|
+| **Portfolio Aggregation** | Upload multiple statements; view combined portfolio metrics | High |
+| **Transaction History** | Persistent session storage (browser localStorage) with upload history | Medium |
+| **Advanced Filtering** | Filter transactions by date range, type, or category | Low |
+| **Custom Date Formats** | Support additional date formats beyond DD-MMM-YYYY | Low |
+
+**Design Principles for v2:**
+- Maintain stateless backend; use browser localStorage or session exports for persistence
+- All enhancements must remain within Render free tier constraints (512 MB RAM, 100,000 monthly requests)
+- New features are **optional** — core XIRR + summary metrics remain unchanged
+
+---
+
+## Getting Help
+### Documentation
+- **Quick start issues?** See [Troubleshooting](#troubleshooting) above
+- **Want to understand the architecture?** Read [`product-structure.md`](intent/product-structure.md)
+- **Need validation rules?** See [`mutual-fund-xirr-tracker-feature.md`](intent/mutual-fund-xirr-tracker-feature.md) §6
+- **Curious about API design?** See [`mutual-fund-xirr-tracker-feature.md`](intent/mutual-fund-xirr-tracker-feature.md) §10.2
+- **Setting up development?** See [Quick Start](#quick-start) above
+
+### Performance Debugging
+If you encounter slow uploads or calculation times:
+1. Check backend logs: `backend/logs/`
+2. Verify file size: < 10 MB
+3. Check transaction count: 2–10,000 rows
+4. Run [`test_xirr_calculator.py`](backend/tests/test_xirr_calculator.py) with your file format
+5. See [Performance Targets](#performance-targets) for expected benchmarks
+
+### Version Info
+- **Project version:** See `package.json` and `requirements.txt`
+- **Python:** 3.11+ (see `backend/runtime.txt`)
+- **Node.js:** 18+ (see `frontend/package.json`)
+- **Documentation version:** [Intent folder version](intent/)
 
 ---
 
