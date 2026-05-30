@@ -1000,7 +1000,7 @@ services:
     # Environment variables for build time
     envVars:
       - key: VITE_API_URL
-        value: https://mf-xirr-backend.onrender.com
+        value: https://mf-xirr-tracker-backend.onrender.com
         scope: build
 ```
 
