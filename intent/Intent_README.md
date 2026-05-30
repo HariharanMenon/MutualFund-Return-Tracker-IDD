@@ -596,12 +596,13 @@ During development, keep these documents close. They'll help you:
 - 🗺️ Plan next phases strategically
 - 🐛 Troubleshoot bugs (often intent documents reveal root causes)
 
-### Next Steps
-1. **Phase 1 (Now):** Setup development environment (from main README.md)
+### Steps
+1. **Phase 1:** Setup development environment (from main README.md)
 2. **Phase 2:** Write API specification (reference feature.md)
 3. **Phase 3:** Build backend (reference feature.md for requirements, product-structure.md for folder layout)
 4. **Phase 4:** Build frontend (reference feature.md for UI details, product-structure.md for components)
 5. **Ongoing:** Reference intent documents in every PR, every code review, every decision
+6. **Ongoing:** Deploy in Prod
 
 Happy building! 🚀
 
