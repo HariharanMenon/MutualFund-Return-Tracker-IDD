@@ -1,0 +1,315 @@
+// useFileUpload.test.js — Tests for the useFileUpload hook.
+// Tests: state machine transitions, validation, skeleton timer, error recovery.
+
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
+import useFileUpload from '../../src/hooks/useFileUpload.js';
+
+// Create a stable execute mock ref accessible both inside vi.mock() and inside tests.
+// vi.hoisted() is hoisted by Vitest's transform so it is available in the vi.mock() factory.
+const mockExecute = vi.hoisted(() => vi.fn());
+
+// Mock the useApi hook using the shared mockExecute ref.
+vi.mock('../../src/hooks/useApi.js', () => ({
+  default: () => ({
+    isLoading: false,
+    error: null,
+    data: null,
+    execute: mockExecute,
+  }),
+}));
+
+// Mock validation functions
+vi.mock('../../src/services/validation.js', () => ({
+  isValidFileType: vi.fn((file) => file.name.endsWith('.xlsx')),
+  isValidFileSize: vi.fn((file) => file.size <= 10 * 1024 * 1024),
+}));
+
+describe('useFileUpload Hook', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    // Reset to the default success implementation before each test.
+    mockExecute.mockResolvedValue({
+      xirr: 0.1254,
+      transactions: [],
+      summaryMetrics: { totalInvested: 100, finalProceeds: 150, profitLoss: 50 },
+    });
+  });
+
+  afterEach(() => {
+    vi.runOnlyPendingTimers();
+    vi.useRealTimers();
+  });
+
+  describe('Initial State', () => {
+    it('starts in idle state', () => {
+      const { result } = renderHook(() => useFileUpload());
+
+      expect(result.current.state).toBe('idle');
+      expect(result.current.error).toBeNull();
+      expect(result.current.data).toBeNull();
+      expect(result.current.isLoading).toBe(false);
+    });
+  });
+
+  describe('File Validation', () => {
+    it('rejects invalid file type and sets error state', async () => {
+      const { result } = renderHook(() => useFileUpload());
+
+      const invalidFile = new File(['test'], 'test.csv', {
+        type: 'text/csv',
+      });
+
+      act(() => {
+        result.current.handleFile(invalidFile);
+      });
+
+      expect(result.current.state).toBe('error');
+      expect(result.current.error).not.toBeNull();
+      expect(result.current.error.message).toContain('validation failed');
+    });
+
+    it('rejects oversized file and sets error state', async () => {
+      const { result } = renderHook(() => useFileUpload());
+
+      const largeFile = new File(
+        ['x'.repeat(11 * 1024 * 1024)],
+        'test.xlsx'
+      );
+
+      act(() => {
+        result.current.handleFile(largeFile);
+      });
+
+      expect(result.current.state).toBe('error');
+      expect(result.current.error.message).toContain('validation failed');
+      expect(result.current.error.details).toContain('too large');
+    });
+
+    it('accepts valid .xlsx file', async () => {
+      const { result } = renderHook(() => useFileUpload());
+
+      const validFile = new File(['test'], 'test.xlsx', {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+
+      await act(async () => {
+        result.current.handleFile(validFile);
+      });
+
+      // Should transition to loading, not error
+      expect(result.current.state).not.toBe('error');
+    });
+  });
+
+  describe('State Machine: idle → loading → skeleton → success', () => {
+    it('transitions to loading immediately after valid file', async () => {
+      // Override execute to never resolve so the hook stays in 'loading' for the assertion.
+      mockExecute.mockReturnValueOnce(new Promise(() => {}));
+
+      const { result } = renderHook(() => useFileUpload());
+
+      const validFile = new File(['test'], 'test.xlsx', {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+
+      await act(async () => {
+        result.current.handleFile(validFile);
+      });
+
+      expect(result.current.state).toBe('loading');
+    });
+
+    it('transitions to skeleton after 2 seconds', async () => {
+      // Override execute to never resolve so the skeleton timer fires before success.
+      mockExecute.mockReturnValueOnce(new Promise(() => {}));
+
+      const { result } = renderHook(() => useFileUpload());
+
+      const validFile = new File(['test'], 'test.xlsx', {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+
+      await act(async () => {
+        result.current.handleFile(validFile);
+      });
+
+      expect(result.current.state).toBe('loading');
+
+      // Fast-forward 2 seconds
+      act(() => {
+        vi.advanceTimersByTime(2000);
+      });
+
+      expect(result.current.state).toBe('skeleton');
+    });
+
+    it('transitions to success when API responds (before skeleton timer)', async () => {
+      // Fake timers are active (set by beforeEach). Promises resolve normally via
+      // microtasks even with fake timers, so awaiting handleFile() lets the entire
+      // async chain complete (mock resolves → clearTimeout → setState('success'))
+      // before the 2-second fake skeleton timer ever fires.
+      const { result } = renderHook(() => useFileUpload());
+
+      const validFile = new File(['test'], 'test.xlsx', {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+
+      await act(async () => {
+        await result.current.handleFile(validFile);
+      });
+
+      expect(result.current.state).toBe('success');
+      expect(result.current.data).not.toBeNull();
+    }, 10000);
+  });
+
+  describe('Error State', () => {
+    it('handles API errors', async () => {
+      // Override the shared mock for this test only — no vi.mock() needed.
+      mockExecute.mockRejectedValueOnce(new Error('API Error'));
+
+      const { result } = renderHook(() => useFileUpload());
+
+      const validFile = new File(['test'], 'test.xlsx', {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+
+      await act(async () => {
+        await result.current.handleFile(validFile);
+      });
+
+      expect(result.current.state).toBe('error');
+      expect(result.current.error.message).toBe('API Error');
+    });
+  });
+
+  describe('Error Recovery', () => {
+    it('resets to idle state when calling reset()', async () => {
+      const { result } = renderHook(() => useFileUpload());
+
+      const invalidFile = new File(['test'], 'test.csv');
+
+      act(() => {
+        result.current.handleFile(invalidFile);
+      });
+
+      expect(result.current.state).toBe('error');
+
+      act(() => {
+        result.current.reset();
+      });
+
+      expect(result.current.state).toBe('idle');
+      expect(result.current.error).toBeNull();
+      expect(result.current.data).toBeNull();
+    });
+
+    it('allows retry after error', async () => {
+      const { result } = renderHook(() => useFileUpload());
+
+      const invalidFile = new File(['test'], 'test.csv');
+
+      // First attempt: error
+      act(() => {
+        result.current.handleFile(invalidFile);
+      });
+
+      expect(result.current.state).toBe('error');
+
+      // Reset
+      act(() => {
+        result.current.reset();
+      });
+
+      // Second attempt: valid file — async act so the upload promise is flushed
+      const validFile = new File(['test'], 'test.xlsx');
+
+      await act(async () => {
+        result.current.handleFile(validFile);
+      });
+
+      expect(result.current.state).not.toBe('error');
+    });
+  });
+
+  describe('isLoading Convenience Flag', () => {
+    it('is true during loading state', async () => {
+      // Keep the upload in-flight so isLoading stays true for the assertion.
+      mockExecute.mockReturnValueOnce(new Promise(() => {}));
+
+      const { result } = renderHook(() => useFileUpload());
+
+      const validFile = new File(['test'], 'test.xlsx', {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+
+      await act(async () => {
+        result.current.handleFile(validFile);
+      });
+
+      expect(result.current.isLoading).toBe(true);
+    });
+
+    it('is true during skeleton state', async () => {
+      // Keep the upload in-flight so skeleton timer fires before success.
+      mockExecute.mockReturnValueOnce(new Promise(() => {}));
+
+      const { result } = renderHook(() => useFileUpload());
+
+      const validFile = new File(['test'], 'test.xlsx', {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+
+      await act(async () => {
+        result.current.handleFile(validFile);
+      });
+
+      act(() => {
+        vi.advanceTimersByTime(2000);
+      });
+
+      expect(result.current.isLoading).toBe(true);
+    });
+
+    it('is false during idle and error states', () => {
+      const { result } = renderHook(() => useFileUpload());
+
+      expect(result.current.isLoading).toBe(false);
+
+      const invalidFile = new File(['test'], 'test.csv');
+
+      act(() => {
+        result.current.handleFile(invalidFile);
+      });
+
+      expect(result.current.isLoading).toBe(false);
+    });
+  });
+
+  describe('Cleanup', () => {
+    it('clears skeleton timeout on unmount', async () => {
+      mockExecute.mockReturnValueOnce(new Promise(() => {}));
+
+      const { result, unmount } = renderHook(() => useFileUpload());
+
+      const validFile = new File(['test'], 'test.xlsx', {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+
+      await act(async () => {
+        result.current.handleFile(validFile);
+      });
+
+      expect(result.current.state).toBe('loading');
+
+      // Unmount while upload is in-flight — skeleton timer must be cleared.
+      unmount();
+
+      // Advancing timers after unmount should not throw or cause state updates.
+      expect(() => {
+        vi.advanceTimersByTime(5000);
+      }).not.toThrow();
+    });
+  });
+});

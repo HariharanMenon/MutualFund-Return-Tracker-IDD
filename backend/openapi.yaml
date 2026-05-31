@@ -28,7 +28,7 @@ info:
 servers:
   - url: http://localhost:8000
     description: Local development server
-  - url: https://mf-xirr-backend.onrender.com
+  - url: https://mf-xirr-tracker-backend.onrender.com
     description: Render production server (free tier)
     x-environment: production
 

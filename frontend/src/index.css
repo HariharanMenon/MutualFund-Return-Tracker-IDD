@@ -1,0 +1,161 @@
+/* index.css — Global stylesheet for the application.
+   Imported by main.jsx.
+   Sets up base resets and imports component/style modules.
+*/
+
+/* Import design tokens */
+@import './styles/variables.css';
+
+/* Import animations */
+@import './styles/animations.css';
+
+/* Import layout / grid system */
+@import './styles/grid.css';
+
+/* Import responsive breakpoints */
+@import './styles/responsive.css';
+
+/* ============================================================ */
+/* Global resets */
+/* ============================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-family: var(--font-family-base);
+  font-size: 16px;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-relaxed, 1.5);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================ */
+/* Typography defaults */
+/* ============================================================ */
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  margin-bottom: var(--spacing-md, 1rem);
+}
+
+h1 { font-size: var(--font-size-3xl); }
+h2 { font-size: var(--font-size-2xl); }
+h3 { font-size: var(--font-size-xl); }
+h4 { font-size: var(--font-size-lg); }
+h5, h6 { font-size: var(--font-size-md); }
+
+p {
+  margin-bottom: var(--spacing-md, 1rem);
+}
+
+p:last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================================ */
+/* Link styling */
+/* ============================================================ */
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+
+a:focus {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+/* ============================================================ */
+/* Form elements */
+/* ============================================================ */
+
+input,
+button,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  border-radius: 4px;
+}
+
+button {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+button:focus {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+input:focus,
+textarea:focus {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+/* ============================================================ */
+/* Tables */
+/* ============================================================ */
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th, td {
+  padding: var(--spacing-md, 1rem);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+th {
+  background-color: var(--color-bg);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ============================================================ */
+/* Lists */
+/* ============================================================ */
+
+ul, ol {
+  margin-bottom: var(--spacing-md, 1rem);
+  padding-left: var(--spacing-lg, 1.5rem);
+}
+
+li {
+  margin-bottom: var(--spacing-sm, 0.5rem);
+}
+
+/* ============================================================ */
+/* Root element */
+/* ============================================================ */
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}

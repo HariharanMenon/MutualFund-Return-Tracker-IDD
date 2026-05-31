@@ -1,0 +1,143 @@
+/* responsive.css — Media queries for mobile / tablet / desktop.
+   Breakpoints:
+     Mobile:  < 640px
+     Tablet:  640px – 1023px
+     Desktop: ≥ 1024px
+   Strategy: mobile-first (base styles target mobile; queries expand upward).
+*/
+
+/* ---------------------------------------------------------- */
+/* Page layout                                                 */
+/* ---------------------------------------------------------- */
+
+.app-container {
+  width: 100%;
+  max-width: var(--max-width-content);
+  margin: 0 auto;
+  padding: var(--spacing-4);
+}
+
+/* ---------------------------------------------------------- */
+/* Results layout: XIRR + Summary side by side on desktop     */
+/* ---------------------------------------------------------- */
+
+/* Mobile: stack vertically */
+.results-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6);
+}
+
+/* Tablet+: XIRR and Summary side by side */
+@media (min-width: 640px) {
+  .results-panel {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .xirr-panel {
+    flex: 0 0 auto;
+    min-width: 200px;
+  }
+
+  .summary-panel {
+    flex: 1;
+  }
+}
+
+/* ---------------------------------------------------------- */
+/* Upload area                                                 */
+/* ---------------------------------------------------------- */
+
+.upload-area {
+  padding: var(--spacing-6);
+}
+
+@media (min-width: 640px) {
+  .upload-area {
+    padding: var(--spacing-8) var(--spacing-10);
+  }
+}
+
+/* ---------------------------------------------------------- */
+/* Summary metrics card grid                                   */
+/* Mobile: 1 col → Tablet: 3 col                              */
+/* ---------------------------------------------------------- */
+
+.summary-metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-4);
+}
+
+@media (min-width: 480px) {
+  .summary-metrics-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ---------------------------------------------------------- */
+/* Transaction table                                           */
+/* Mobile: scroll horizontally (overflow-x: auto set in       */
+/* grid.css on .transaction-table-wrapper)                     */
+/* ---------------------------------------------------------- */
+
+/* Collapse some column headings on very small screens */
+@media (max-width: 480px) {
+  .transaction-table th:nth-child(5),  /* Price        */
+  .transaction-table td:nth-child(5) {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------- */
+/* XIRR display                                                */
+/* ---------------------------------------------------------- */
+
+.xirr-value {
+  font-size: var(--font-size-2xl);   /* 36px minimum — spec §4.2 */
+}
+
+@media (min-width: 640px) {
+  .xirr-value {
+    font-size: var(--font-size-3xl);
+  }
+}
+
+/* ---------------------------------------------------------- */
+/* Error banner                                                */
+/* ---------------------------------------------------------- */
+
+.error-banner {
+  padding: var(--spacing-4);
+}
+
+@media (min-width: 640px) {
+  .error-banner {
+    padding: var(--spacing-5) var(--spacing-6);
+  }
+}
+
+/* ---------------------------------------------------------- */
+/* Page header / title                                         */
+/* ---------------------------------------------------------- */
+
+.page-title {
+  font-size: var(--font-size-xl);
+}
+
+@media (min-width: 640px) {
+  .page-title {
+    font-size: var(--font-size-2xl);
+  }
+}
+
+/* ---------------------------------------------------------- */
+/* App container padding on large screens                      */
+/* ---------------------------------------------------------- */
+
+@media (min-width: 1024px) {
+  .app-container {
+    padding: var(--spacing-8) var(--spacing-6);
+  }
+}

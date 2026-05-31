@@ -1,0 +1,178 @@
+/* grid.css — 6-column transaction table layout.
+   Spec §4.4: fixed columns in order:
+     1. Date           — narrow, fixed
+     2. Transaction Type — medium, flexible
+     3. Amount         — narrow, right-aligned (currency)
+     4. Units          — narrow, right-aligned (3dp)
+     5. Price          — narrow, right-aligned (2–4dp)
+     6. Unit Balance   — narrow, right-aligned (3dp)
+   Row striping: alternating bg (spec §4.4 "alternating bg colors").
+   Responsive degradation: handled in responsive.css.
+*/
+
+/* ---------------------------------------------------------- */
+/* Table container                                             */
+/* ---------------------------------------------------------- */
+
+.transaction-table-wrapper {
+  width: 100%;
+  overflow-x: auto;           /* horizontal scroll on small screens */
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  background: var(--color-surface);
+}
+
+/* ---------------------------------------------------------- */
+/* Table base                                                  */
+/* ---------------------------------------------------------- */
+
+.transaction-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family-base);
+  table-layout: fixed;
+}
+
+/* ---------------------------------------------------------- */
+/* Column proportional widths (sum = 100%)                     */
+/* ---------------------------------------------------------- */
+
+.transaction-table colgroup col:nth-child(1) { width: 13%; } /* Date         */
+.transaction-table colgroup col:nth-child(2) { width: 27%; } /* Tx Type      */
+.transaction-table colgroup col:nth-child(3) { width: 15%; } /* Amount       */
+.transaction-table colgroup col:nth-child(4) { width: 13%; } /* Units        */
+.transaction-table colgroup col:nth-child(5) { width: 14%; } /* Price        */
+.transaction-table colgroup col:nth-child(6) { width: 18%; } /* Unit Balance  */
+
+/* ---------------------------------------------------------- */
+/* Header row                                                  */
+/* ---------------------------------------------------------- */
+
+.transaction-table thead tr {
+  background: var(--color-bg);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.transaction-table th {
+  padding: var(--spacing-3) var(--spacing-4);
+  text-align: left;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Numeric columns: right-aligned header */
+.transaction-table th:nth-child(n+3) {
+  text-align: right;
+}
+
+/* ---------------------------------------------------------- */
+/* Data rows                                                   */
+/* ---------------------------------------------------------- */
+
+.transaction-table tbody tr {
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color var(--transition-fast);
+}
+
+/* Alternating row stripes (spec §4.4) */
+.transaction-table tbody tr:nth-child(odd) {
+  background: var(--color-surface);
+}
+.transaction-table tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+.transaction-table tbody tr:hover {
+  background: #eff6ff;
+}
+
+.transaction-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.transaction-table td {
+  padding: var(--spacing-3) var(--spacing-4);
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+/* Numeric columns: right-aligned cells */
+.transaction-table td:nth-child(n+3) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Empty cell indicator "—" (spec §4.4) */
+.transaction-table td.cell-empty {
+  color: var(--color-muted);
+}
+
+/* ---------------------------------------------------------- */
+/* Skeleton grid placeholder (mirrors real table structure)    */
+/* ---------------------------------------------------------- */
+
+.skeleton-grid {
+  width: 100%;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.skeleton-grid-header {
+  display: grid;
+  grid-template-columns: 13fr 27fr 15fr 13fr 14fr 18fr;
+  gap: 0;
+  background: var(--color-bg);
+  border-bottom: 2px solid var(--color-border);
+  padding: var(--spacing-3) var(--spacing-4);
+}
+
+.skeleton-grid-header-cell {
+  height: 12px;
+  border-radius: var(--radius-sm);
+  margin: 0 var(--spacing-2);
+}
+
+.skeleton-grid-row {
+  display: grid;
+  grid-template-columns: 13fr 27fr 15fr 13fr 14fr 18fr;
+  gap: 0;
+  padding: var(--spacing-3) var(--spacing-4);
+  border-bottom: 1px solid var(--color-border);
+  align-items: center;
+}
+
+.skeleton-grid-row:nth-child(even) {
+  background: #f8fafc;
+}
+
+.skeleton-grid-row:last-child {
+  border-bottom: none;
+}
+
+.skeleton-grid-cell {
+  height: 14px;
+  border-radius: var(--radius-sm);
+  margin: 0 var(--spacing-2);
+}
+
+/* Shorter cells for sparse rows (Stamp Duty, SELL) */
+.skeleton-grid-cell.cell-short {
+  width: 60%;
+}
+.skeleton-grid-cell.cell-empty-stub {
+  width: 30%;
+  opacity: 0.4;
+}
