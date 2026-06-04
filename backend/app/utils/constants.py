@@ -52,6 +52,10 @@ DIVIDEND_REINVEST_VARIANTS: frozenset[str] = frozenset({
 STAMP_DUTY_VARIANTS: frozenset[str] = frozenset({
     "stamp duty",
     "stt paid",
+    "less: stamp duty",
+    "less: stt paid",           # Alternative wording
+    "stamp duty - stt",         # Different delimiter
+    "stt",                       # Abbreviated form
 })
 
 # Union of every known variant — used to reject unrecognised types
