@@ -20,29 +20,53 @@ else
     UVICORN_CMD="uvicorn"
 fi
 
+# Recursively kill a process and all its descendants (bottom-up)
+kill_tree() {
+    local pid=$1
+    # Find and recursively kill children first
+    local children
+    children=$(pgrep -P "$pid" 2>/dev/null || true)
+    for child in $children; do
+        kill_tree "$child"
+    done
+    # Then kill the parent
+    kill "$pid" 2>/dev/null || true
+}
+
+# Safety net: kill any process still holding a given port
+kill_port() {
+    local port=$1
+    local pids
+    if command -v lsof &>/dev/null; then
+        pids=$(lsof -ti tcp:"$port" 2>/dev/null || true)
+    else
+        # fallback for systems without lsof (e.g. minimal Linux containers)
+        pids=$(ss -tlnp "sport = :$port" 2>/dev/null |
+               grep -oP 'pid=\K[0-9]+' || true)
+    fi
+    for p in $pids; do
+        kill -9 "$p" 2>/dev/null || true
+    done
+}
+
 cleanup() {
     echo ""
     echo "==> Stopping servers and cleaning up ports..."
-    
-    # Kill the entire process group rather than just the single parent PID.
-    # This ensures child sub-processes (Node workers, Uvicorn reloaders) are terminated.
-    if [ -n "${BACKEND_PID:-}" ]; then
-        pkill -P "$BACKEND_PID" 2>/dev/null || true
-        kill "$BACKEND_PID" 2>/dev/null || true
-    fi
-    
-    if [ -n "${FRONTEND_PID:-}" ]; then
-        pkill -P "$FRONTEND_PID" 2>/dev/null || true
-        kill "$FRONTEND_PID" 2>/dev/null || true
-    fi
-    
+
+    [ -n "${BACKEND_PID:-}"  ] && kill_tree "$BACKEND_PID"
+    [ -n "${FRONTEND_PID:-}" ] && kill_tree "$FRONTEND_PID"
+
+    # Safety net: kill anything still holding port 8000 or 5173
+    kill_port 8000
+    kill_port 5173
+
     echo "    Done. Ports 8000 and 5173 freed."
 }
+
 # Trap exit signals to ensure cleanup runs
 trap cleanup EXIT INT TERM
 
 echo "==> Starting backend on http://localhost:8000 ..."
-# Run backend inside a cleanly scoped subshell context
 (
     cd "$BACKEND_DIR"
     exec "$UVICORN_CMD" main:app --reload --host 127.0.0.1 --port 8000
@@ -50,7 +74,6 @@ echo "==> Starting backend on http://localhost:8000 ..."
 BACKEND_PID=$!
 
 echo "==> Starting frontend on http://localhost:5173 ..."
-# Run frontend inside a cleanly scoped subshell context
 (
     cd "$FRONTEND_DIR"
     exec npm run dev

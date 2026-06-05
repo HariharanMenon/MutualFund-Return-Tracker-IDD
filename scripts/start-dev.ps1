@@ -2,7 +2,7 @@
 # Usage: .\scripts\start-dev.ps1
 # Run from the repository root.
 # Opens the backend in the current terminal and the frontend in a new window.
-# Press Ctrl-C in each terminal to stop.
+# Press ENTER in this terminal to stop both servers.
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -18,7 +18,6 @@ $FrontendDir = Join-Path $RepoRoot "frontend"
 $UvicornCmd = if (Test-Path $VenvUvicorn) { $VenvUvicorn } else { "uvicorn" }
 
 Write-Host "==> Starting backend on http://localhost:8000 ..."
-# Use a cleaner, single-string format for -ArgumentList to avoid nested quoting bugs
 $BackendProcess = Start-Process powershell -ArgumentList "-NoExit -Command `"Set-Location '$BackendDir'; & '$UvicornCmd' main:app --reload --host 127.0.0.1 --port 8000`"" -PassThru
 
 Write-Host "==> Starting frontend on http://localhost:5173 ..."
@@ -34,20 +33,31 @@ $null = Read-Host
 
 Write-Host "==> Stopping servers and cleaning up ports..."
 
-# Helper function to kill the window AND any child processes (Node / Python / Uvicorn) it spawned
+# Recursively kill a process and all its descendants (bottom-up)
 function Stop-ProcessTree ($ParentPid) {
-    if ($ParentPid) {
-        # Visual/Graceful window close first
-        Stop-Process -Id $ParentPid -Force -ErrorAction SilentlyContinue
-        
-        # WMI lookup to catch orphaned child processes holding the ports
-        Get-CimInstance Win32_Process | Where-Object { $_.ParentProcessId -eq $ParentPid } | ForEach-Object {
-            Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
-        }
-    }
+    if (-not $ParentPid) { return }
+    # Kill all children recursively first (bottom-up)
+    Get-CimInstance Win32_Process |
+        Where-Object { $_.ParentProcessId -eq $ParentPid } |
+        ForEach-Object { Stop-ProcessTree -ParentPid $_.ProcessId }
+    # Then kill the parent itself
+    Stop-Process -Id $ParentPid -Force -ErrorAction SilentlyContinue
 }
 
 Stop-ProcessTree -ParentPid $BackendProcess.Id
 Stop-ProcessTree -ParentPid $FrontendProcess.Id
+
+# Safety net: kill anything still LISTENING/ESTABLISHED on port 8000 or 5173
+# Handles edge cases where PID tracking failed (e.g. server window was manually restarted)
+foreach ($port in @(8000, 5173)) {
+    $pids = netstat -ano |
+        Select-String ":$port\s" |
+        ForEach-Object { ($_ -split '\s+')[-1] } |
+        Where-Object { $_ -match '^\d+$' -and $_ -ne '0' } |
+        Sort-Object -Unique
+    foreach ($p in $pids) {
+        Stop-Process -Id ([int]$p) -Force -ErrorAction SilentlyContinue
+    }
+}
 
 Write-Host "    Done. Ports 8000 and 5173 freed."
