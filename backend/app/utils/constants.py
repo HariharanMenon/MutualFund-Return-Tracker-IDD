@@ -58,7 +58,9 @@ STAMP_DUTY_VARIANTS: frozenset[str] = frozenset({
     "stt",                       # Abbreviated form
 })
 
-# Union of every known variant — used to reject unrecognised types
+# Union of every known exact variant — used for Tier-1 fast-path matching.
+# Tier-2 (keyword-contains) is handled by CATEGORY_KEYWORDS below,
+# so ALL_KNOWN_VARIANTS is no longer the gatekeeper for validity.
 ALL_KNOWN_VARIANTS: frozenset[str] = (
     PURCHASE_VARIANTS
     | SELL_VARIANTS
@@ -66,6 +68,61 @@ ALL_KNOWN_VARIANTS: frozenset[str] = (
     | DIVIDEND_REINVEST_VARIANTS
     | STAMP_DUTY_VARIANTS
 )
+
+
+# ============================================================
+# Keyword-based fallback matching (Tier 2)
+#
+# Used when a raw value doesn't hit any exact variant above.
+# The normaliser iterates categories IN ORDER and returns the
+# first category whose keyword appears as a substring of the
+# lower-cased, stripped input.
+#
+# Ordering rules:
+#   1. More specific / longer keywords before shorter ones.
+#   2. More restrictive categories (STAMP_DUTY, DIVIDEND_REINVEST)
+#      before broad ones (PURCHASE) to avoid mis-classification.
+#
+# Examples this handles:
+#   "Net Purchase"          → PURCHASE   (contains "purchase")
+#   "Additional Purchase"   → PURCHASE   (contains "purchase")
+#   "Fresh SIP"             → PURCHASE   (contains "sip")
+#   "Switch In - Purchase"  → PURCHASE   (contains "switch in")
+#   "SWP Redemption"        → REDEMPTION (contains "redemption")
+#   "Switch Out"            → REDEMPTION (contains "switch out")
+#   "Less: STT"             → STAMP_DUTY (contains "stt")
+# ============================================================
+
+CATEGORY_KEYWORDS: dict[str, list[str]] = {
+    # STAMP_DUTY first — "stt" is short and could appear in other strings
+    "STAMP_DUTY": [
+        "stamp duty",
+        "stt paid",
+        "stt",
+    ],
+    # DIVIDEND_REINVEST before PURCHASE — "dividend" is unambiguous
+    "DIVIDEND_REINVEST": [
+        "dividend reinvest",
+        "dividend",
+    ],
+    # REDEMPTION before PURCHASE — "switch out" / "swp" are redemption-specific
+    "REDEMPTION": [
+        "redemption",
+        "switch out",
+        "swp",                  # Systematic Withdrawal Plan
+    ],
+    "SELL": [
+        "sell",
+    ],
+    # PURCHASE last — keywords like "purchase", "sip", "buy" are broad
+    "PURCHASE": [
+        "switch in",            # More specific than bare "purchase"
+        "systematic investment",
+        "purchase",
+        "sip",
+        "buy",
+    ],
+}
 
 
 # ============================================================

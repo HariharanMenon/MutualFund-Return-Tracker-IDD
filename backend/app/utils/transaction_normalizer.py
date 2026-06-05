@@ -17,6 +17,7 @@ from app.utils.constants import (
     DIVIDEND_REINVEST_VARIANTS,
     STAMP_DUTY_VARIANTS,
     ALL_KNOWN_VARIANTS,
+    CATEGORY_KEYWORDS,
     ErrorMessages,
 )
 
@@ -24,7 +25,18 @@ from app.utils.constants import (
 def get_category(raw: str, row: int) -> TransactionCategory:
     """Return the canonical :class:`TransactionCategory` for a raw type string.
 
-    Matching is performed after lower-casing and stripping the input.
+    Matching uses a two-tier strategy:
+
+    **Tier 1 — Exact match** (fast path):
+        Lower-cased, stripped input is checked against each known variant
+        frozenset. Handles all values explicitly listed in ``constants.py``.
+
+    **Tier 2 — Keyword-contains fallback**:
+        If Tier 1 finds no match, the input is tested for substring
+        containment against ``CATEGORY_KEYWORDS`` (in declared order).
+        This handles real-world fund statement phrases such as:
+        "Net Purchase", "Additional Purchase", "SWP Redemption",
+        "Switch In – Growth", "Fresh SIP", etc.
 
     Parameters
     ----------
@@ -40,10 +52,11 @@ def get_category(raw: str, row: int) -> TransactionCategory:
     Raises
     ------
     ValueError
-        When the raw value does not match any known transaction type variant.
+        When neither tier matches the raw value.
     """
     key = raw.strip().lower()
 
+    # --- Tier 1: exact match against known variant sets ---
     if key in PURCHASE_VARIANTS:
         return TransactionCategory.PURCHASE
     if key in SELL_VARIANTS:
@@ -55,6 +68,12 @@ def get_category(raw: str, row: int) -> TransactionCategory:
     if key in STAMP_DUTY_VARIANTS:
         return TransactionCategory.STAMP_DUTY
 
+    # --- Tier 2: keyword-contains fallback ---
+    for category_name, keywords in CATEGORY_KEYWORDS.items():
+        for keyword in keywords:
+            if keyword in key:
+                return TransactionCategory[category_name]
+
     raise ValueError(
         ErrorMessages.UNKNOWN_TRANSACTION_TYPE.format(row=row, value=raw)
     )
@@ -63,6 +82,21 @@ def get_category(raw: str, row: int) -> TransactionCategory:
 def is_known_type(raw: str) -> bool:
     """Return ``True`` if *raw* matches any known transaction type variant.
 
+    Checks both Tier-1 exact variants and Tier-2 keyword-contains rules,
+    mirroring the full logic of :func:`get_category`.
+
     Useful for quick membership checks without needing a row number.
     """
-    return raw.strip().lower() in ALL_KNOWN_VARIANTS
+    key = raw.strip().lower()
+
+    # Tier 1: exact match
+    if key in ALL_KNOWN_VARIANTS:
+        return True
+
+    # Tier 2: keyword-contains
+    for keywords in CATEGORY_KEYWORDS.values():
+        for keyword in keywords:
+            if keyword in key:
+                return True
+
+    return False
