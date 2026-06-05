@@ -2,6 +2,7 @@
 test_transaction_normalizer.py — Unit tests for transaction type normalisation.
 
 Covers: all spec-defined variants, case-insensitivity, whitespace tolerance,
+Tier-2 keyword-contains matching for generic real-world fund statement phrases,
 and rejection of unknown types.
 """
 
@@ -12,7 +13,7 @@ from app.utils.transaction_normalizer import get_category, is_known_type
 
 
 # ---------------------------------------------------------------------------
-# PURCHASE variants
+# PURCHASE variants — Tier 1 exact match
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("raw", [
@@ -28,7 +29,7 @@ def test_purchase_variants(raw):
 
 
 # ---------------------------------------------------------------------------
-# SELL variants
+# SELL variants — Tier 1 exact match
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("raw", ["SELL", "sell", "Sell"])
@@ -37,7 +38,7 @@ def test_sell_variants(raw):
 
 
 # ---------------------------------------------------------------------------
-# REDEMPTION variants
+# REDEMPTION variants — Tier 1 exact match
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("raw", ["REDEMPTION", "redemption", "Redemption"])
@@ -46,7 +47,7 @@ def test_redemption_variants(raw):
 
 
 # ---------------------------------------------------------------------------
-# DIVIDEND_REINVEST variants
+# DIVIDEND_REINVEST variants — Tier 1 exact match
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("raw", [
@@ -58,7 +59,7 @@ def test_dividend_reinvest_variants(raw):
 
 
 # ---------------------------------------------------------------------------
-# STAMP_DUTY variants
+# STAMP_DUTY variants — Tier 1 exact match
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("raw", [
@@ -82,11 +83,111 @@ def test_whitespace_stripped(raw):
 
 
 # ---------------------------------------------------------------------------
-# Unknown type → ValueError with row number
+# Tier 2 — keyword-contains: PURCHASE generic phrases
+# Real-world fund statement values that don't appear in the exact variant sets
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("raw", [
-    "Unknown", "TRANSFER", "BONUS", "Dividend", "Growth",
+    "Net Purchase",
+    "Additional Purchase",
+    "Fresh Purchase",
+    "Lumpsum Purchase",
+    "Switch In - Growth",
+    "Switch In",
+    "Fresh SIP",
+    "SIP - Monthly",
+    "Systematic Investment - Weekly",
+])
+def test_purchase_keyword_fallback(raw):
+    assert get_category(raw, 1) == TransactionCategory.PURCHASE
+
+
+# ---------------------------------------------------------------------------
+# Tier 2 — keyword-contains: REDEMPTION generic phrases
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("raw", [
+    "SWP Redemption",
+    "Partial Redemption",
+    "Full Redemption",
+    "Switch Out",
+    "SWP",
+    "SWP - Monthly",
+])
+def test_redemption_keyword_fallback(raw):
+    assert get_category(raw, 1) == TransactionCategory.REDEMPTION
+
+
+# ---------------------------------------------------------------------------
+# Tier 2 — keyword-contains: SELL generic phrases
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("raw", [
+    "Partial Sell",
+    "Full Sell",
+    "Force Sell",
+])
+def test_sell_keyword_fallback(raw):
+    assert get_category(raw, 1) == TransactionCategory.SELL
+
+
+# ---------------------------------------------------------------------------
+# Tier 2 — keyword-contains: DIVIDEND_REINVEST generic phrases
+# "Dividend" alone (without "reinvest") should map to DIVIDEND_REINVEST
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("raw", [
+    "Dividend",
+    "dividend",
+    "DIVIDEND",
+    "Dividend - Growth Option",
+    "Dividend Payout",
+])
+def test_dividend_keyword_fallback(raw):
+    assert get_category(raw, 1) == TransactionCategory.DIVIDEND_REINVEST
+
+
+# ---------------------------------------------------------------------------
+# Tier 2 — keyword-contains: STAMP_DUTY generic phrases
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("raw", [
+    "Less: STT",
+    "Less: STT Paid",
+    "Less: Stamp Duty",
+    "STT - Equity",
+])
+def test_stamp_duty_keyword_fallback(raw):
+    assert get_category(raw, 1) == TransactionCategory.STAMP_DUTY
+
+
+# ---------------------------------------------------------------------------
+# Tier 2 — classification priority (ordering correctness)
+# These values contain keywords from multiple categories; verify the correct
+# one wins based on CATEGORY_KEYWORDS ordering in constants.py
+# ---------------------------------------------------------------------------
+
+def test_stt_beats_purchase():
+    # "stt" keyword appears in STAMP_DUTY before PURCHASE scan begins
+    assert get_category("STT Purchase Adjustment", 1) == TransactionCategory.STAMP_DUTY
+
+def test_switch_out_beats_purchase():
+    # "switch out" is listed under REDEMPTION; must not fall through to PURCHASE
+    assert get_category("Switch Out - Growth", 1) == TransactionCategory.REDEMPTION
+
+def test_switch_in_maps_to_purchase():
+    # "switch in" is listed under PURCHASE
+    assert get_category("Switch In - Growth", 1) == TransactionCategory.PURCHASE
+
+
+# ---------------------------------------------------------------------------
+# Unknown type → ValueError with row number
+# NOTE: "Dividend" removed from this list — it now maps to DIVIDEND_REINVEST
+#       via Tier-2 keyword match ("dividend" keyword).
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("raw", [
+    "Unknown", "TRANSFER", "BONUS", "Growth",
     "", "123",
 ])
 def test_unknown_type_raises(raw):
@@ -95,7 +196,7 @@ def test_unknown_type_raises(raw):
 
 
 # ---------------------------------------------------------------------------
-# is_known_type helper
+# is_known_type helper — Tier 1 exact matches still return True
 # ---------------------------------------------------------------------------
 
 def test_is_known_type_true():
@@ -104,7 +205,25 @@ def test_is_known_type_true():
     assert is_known_type("stamp duty") is True
 
 
+# ---------------------------------------------------------------------------
+# is_known_type helper — Tier 2 keyword matches now return True
+# ---------------------------------------------------------------------------
+
+def test_is_known_type_true_tier2():
+    assert is_known_type("Net Purchase") is True
+    assert is_known_type("SWP Redemption") is True
+    assert is_known_type("Switch Out") is True
+    assert is_known_type("Dividend") is True
+    assert is_known_type("Less: STT") is True
+
+
+# ---------------------------------------------------------------------------
+# is_known_type helper — genuinely unrecognised strings return False
+# ---------------------------------------------------------------------------
+
 def test_is_known_type_false():
     assert is_known_type("Unknown") is False
     assert is_known_type("") is False
     assert is_known_type("Transfer") is False
+    assert is_known_type("BONUS") is False
+    assert is_known_type("Growth") is False

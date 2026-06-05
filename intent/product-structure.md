@@ -1,8 +1,8 @@
 # Product Structure: MutualFund-Return-Tracker-IDD
 
-**Version:** 2.0  
+**Version:** 2.1  
 **Date:** March 19, 2026  
-**Last Updated:** May 30, 2026
+**Last Updated:** June 04, 2026
 **Revision:** Updated progress and brought in sync scripts section
 **Context:** Stateless, in-memory file processing on Render free tier (single instance, cold-start delays acceptable)
 ---
@@ -605,24 +605,45 @@ This document should include:
 # Usage: bash scripts/setup.sh
 # Run from the repository root.
 
+# Exit immediately if a command exits with a non-zero status
+# Treat unset variables as an error, and catch pipeline failures
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$REPO_ROOT"
+
+# Define explicit paths to virtual environment binaries to bypass activation scoping
+VENV_PATH="$REPO_ROOT/.venv"
+VENV_PYTHON="$VENV_PATH/bin/python3"
+VENV_PIP="$VENV_PATH/bin/pip"
+
+# Corporate/Firewall Bypass: Define trusted hosts for pip
+TRUSTED_HOSTS=(
+  "--trusted-host" "pypi.org"
+  "--trusted-host" "files.pythonhosted.org"
+  "--trusted-host" "pypi.python.org"
+)
 
 echo "==> Setting up backend Python virtual environment..."
-# .venv lives at the repository root; requirements.txt is in backend/
-python3 -m venv .venv
-source .venv/bin/activate
-pip install --upgrade pip --quiet
-pip install -r backend/requirements.txt --quiet
-deactivate
+# Create the venv if it doesn't already exist
+if [ ! -d "$VENV_PATH" ]; then
+    python3 -m venv "$VENV_PATH"
+fi
+
+# Upgrade pip and install requirements using direct paths and trusted host flags
+"$VENV_PYTHON" -m pip install --upgrade pip --quiet "${TRUSTED_HOSTS[@]}"
+"$VENV_PIP" install -r "$REPO_ROOT/backend/requirements.txt" --quiet "${TRUSTED_HOSTS[@]}"
 echo "    Backend .venv ready."
 
 echo "==> Setting up frontend Node.js dependencies..."
-cd "$REPO_ROOT/frontend"
-npm install --silent
-echo "    Frontend node_modules ready."
+# Use a subshell ( ... ) to change directories so we automatically 
+# snap back to the previous directory when it finishes
+(
+    cd "$REPO_ROOT/frontend"
+    # Note: If npm fails with a similar SSL error, uncomment the line below:
+    # npm config set strict-ssl false
+    npm install --silent
+    echo "    Frontend node_modules ready."
+)
 
 echo ""
 echo "Setup complete. To start both servers run:"
@@ -641,31 +662,59 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+# Define explicit paths to execution tools to bypass virtualenv 'source' leakage
+VENV_UVICORN="$REPO_ROOT/.venv/bin/uvicorn"
+BACKEND_DIR="$REPO_ROOT/backend"
+FRONTEND_DIR="$REPO_ROOT/frontend"
+
+# Fallback to global uvicorn if venv doesn't exist
+if [ -f "$VENV_UVICORN" ]; then
+    UVICORN_CMD="$VENV_UVICORN"
+else
+    UVICORN_CMD="uvicorn"
+fi
+
 cleanup() {
     echo ""
-    echo "==> Stopping servers..."
-    kill "$BACKEND_PID" "$FRONTEND_PID" 2>/dev/null || true
-    wait "$BACKEND_PID" "$FRONTEND_PID" 2>/dev/null || true
-    echo "    Done."
+    echo "==> Stopping servers and cleaning up ports..."
+    
+    # Kill the entire process group rather than just the single parent PID.
+    # This ensures child sub-processes (Node workers, Uvicorn reloaders) are terminated.
+    if [ -n "${BACKEND_PID:-}" ]; then
+        pkill -P "$BACKEND_PID" 2>/dev/null || true
+        kill "$BACKEND_PID" 2>/dev/null || true
+    fi
+    
+    if [ -n "${FRONTEND_PID:-}" ]; then
+        pkill -P "$FRONTEND_PID" 2>/dev/null || true
+        kill "$FRONTEND_PID" 2>/dev/null || true
+    fi
+    
+    echo "    Done. Ports 8000 and 5173 freed."
 }
+# Trap exit signals to ensure cleanup runs
 trap cleanup EXIT INT TERM
 
 echo "==> Starting backend on http://localhost:8000 ..."
-# .venv is at the repository root; activate before cd-ing into backend/.
-if [ -f "$REPO_ROOT/.venv/bin/activate" ]; then
-    source "$REPO_ROOT/.venv/bin/activate"
-fi
-cd "$REPO_ROOT/backend"
-uvicorn main:app --reload --host 127.0.0.1 --port 8000 &
+# Run backend inside a cleanly scoped subshell context
+(
+    cd "$BACKEND_DIR"
+    exec "$UVICORN_CMD" main:app --reload --host 127.0.0.1 --port 8000
+) &
 BACKEND_PID=$!
 
 echo "==> Starting frontend on http://localhost:5173 ..."
-cd "$REPO_ROOT/frontend"
-npm run dev &
+# Run frontend inside a cleanly scoped subshell context
+(
+    cd "$FRONTEND_DIR"
+    exec npm run dev
+) &
 FRONTEND_PID=$!
 
 echo ""
-echo "Both servers running. Press Ctrl-C to stop."
+echo "Both servers running concurrently. Press Ctrl-C to stop."
+
+# Wait cleanly for the background processes
 wait
 ```
 
@@ -673,37 +722,76 @@ wait
 ```bash
 #!/usr/bin/env bash
 # test-all.sh — Run backend pytest + frontend vitest (Mac / Linux)
-# Usage: bash scripts/test-all.sh
+# Usage: ./scripts/test-all.sh
 # Run from the repository root.
 # Exits non-zero if any test suite fails.
 
 set -euo pipefail
 
+# Get the directory of the script, then go up one level to the repo root
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FAILED=0
 
+# Define paths to executables
+PYTEST_EXE="$REPO_ROOT/.venv/bin/pytest"
+
+# Color codes for clean UI output
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+# --------------------------------------------
+# Backend Tests (pytest)
+# --------------------------------------------
 echo "=============================="
 echo " Backend tests (pytest)"
 echo "=============================="
-# .venv is at the repository root; activate before cd-ing into backend/.
-if [ -f "$REPO_ROOT/.venv/bin/activate" ]; then
-    source "$REPO_ROOT/.venv/bin/activate"
-fi
-cd "$REPO_ROOT/backend"
-python -m pytest tests/ -v || FAILED=1
 
+if [ ! -x "$PYTEST_EXE" ]; then
+    echo "Warning: Virtual environment or pytest executable not found at: $PYTEST_EXE" >&2
+    FAILED=1
+elif [ ! -d "$REPO_ROOT/backend" ]; then
+    echo "Warning: Backend directory missing at $REPO_ROOT/backend" >&2
+    FAILED=1
+else
+    # Wrap in a subshell ( ... ) so directory changes don't affect the rest of the script
+    (
+        cd "$REPO_ROOT/backend"
+        # Run pytest directly from the .venv without activating
+        "$PYTEST_EXE" tests/ -v
+    ) || FAILED=1
+fi
+
+# --------------------------------------------
+# Frontend Tests (vitest)
+# --------------------------------------------
 echo ""
 echo "=============================="
 echo " Frontend tests (vitest)"
 echo "=============================="
-cd "$REPO_ROOT/frontend"
-npm run test || FAILED=1
 
+if ! command -v npm &> /dev/null; then
+    echo "Warning: Node.js/npm is not installed or not in PATH." >&2
+    FAILED=1
+elif [ ! -d "$REPO_ROOT/frontend" ]; then
+    echo "Warning: Frontend directory missing at $REPO_ROOT/frontend" >&2
+    FAILED=1
+else
+    (
+        cd "$REPO_ROOT/frontend"
+        npm run test
+    ) || FAILED=1
+fi
+
+# --------------------------------------------
+# Test Results Execution
+# --------------------------------------------
 echo ""
 if [ "$FAILED" -eq 0 ]; then
-    echo "All tests passed."
+    echo -e "${GREEN}All tests passed successfully!${NC}"
+    exit 0
 else
-    echo "One or more test suites FAILED." >&2
+    echo -e "${RED}One or more test suites FAILED.${NC}" >&2
     exit 1
 fi
 ```
@@ -738,21 +826,38 @@ echo "    Build complete. Output: frontend/dist/"
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
+# $PSScriptRoot is root/scripts, so Parent is the repository root
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 
+# Define explicit paths to avoid scope/activation issues
+$VenvPath = Join-Path $RepoRoot ".venv"
+$VenvPip  = Join-Path $VenvPath "Scripts\pip.exe"
+$VenvPy   = Join-Path $VenvPath "Scripts\python.exe"
+
+# Corporate/Firewall Bypass: Define trusted hosts for pip
+$TrustedHosts = @("--trusted-host", "pypi.org", "--trusted-host", "files.pythonhosted.org", "--trusted-host", "pypi.python.org")
+
 Write-Host "==> Setting up backend Python virtual environment..."
-# .venv lives at the repository root; requirements.txt is in backend/
-python -m venv "$RepoRoot\.venv"
-& "$RepoRoot\.venv\Scripts\Activate.ps1"
-python -m pip install --upgrade pip --quiet
-pip install -r "$RepoRoot\backend\requirements.txt" --quiet
-deactivate
+# Create the venv if it doesn't exist
+if (-not (Test-Path $VenvPath)) {
+    python -m venv $VenvPath
+}
+
+# Upgrade pip and install requirements using trusted host flags to bypass corporate SSL decryption issues
+& $VenvPy -m pip install --upgrade pip --quiet $TrustedHosts
+& $VenvPip install -r "$RepoRoot\backend\requirements.txt" --quiet $TrustedHosts
 Write-Host "    Backend .venv ready."
 
 Write-Host "==> Setting up frontend Node.js dependencies..."
 Push-Location "$RepoRoot\frontend"
 try {
-    npm install --silent
+    # Note: If npm fails with a similar SSL error, you may need to run: npm config set strict-ssl false
+    & npm install --silent
+    
+    # Check if the external process failed
+    if ($LASTEXITCODE -ne 0) {
+        throw "npm install failed with exit code $LASTEXITCODE"
+    }
     Write-Host "    Frontend node_modules ready."
 }
 finally {
@@ -777,37 +882,48 @@ Set-StrictMode -Version Latest
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 
-Write-Host "==> Starting backend on http://localhost:8000 ..."
-# .venv is at the repository root; the new window activates it before running uvicorn.
-$BackendCmd = if (Test-Path "$RepoRoot\.venv\Scripts\Activate.ps1") {
-    "& '$RepoRoot\.venv\Scripts\Activate.ps1'; uvicorn main:app --reload --host 127.0.0.1 --port 8000"
-} else {
-    "uvicorn main:app --reload --host 127.0.0.1 --port 8000"
-}
+# Define explicit paths to execution tools
+$VenvUvicorn = Join-Path $RepoRoot ".venv\Scripts\uvicorn.exe"
+$BackendDir  = Join-Path $RepoRoot "backend"
+$FrontendDir = Join-Path $RepoRoot "frontend"
 
-$BackendProcess = Start-Process powershell -ArgumentList (
-    "-NoExit", "-Command",
-    "Set-Location '$RepoRoot\backend'; $BackendCmd"
-) -PassThru
+# Fallback to global uvicorn if venv doesn't exist
+$UvicornCmd = if (Test-Path $VenvUvicorn) { $VenvUvicorn } else { "uvicorn" }
+
+Write-Host "==> Starting backend on http://localhost:8000 ..."
+# Use a cleaner, single-string format for -ArgumentList to avoid nested quoting bugs
+$BackendProcess = Start-Process powershell -ArgumentList "-NoExit -Command `"Set-Location '$BackendDir'; & '$UvicornCmd' main:app --reload --host 127.0.0.1 --port 8000`"" -PassThru
 
 Write-Host "==> Starting frontend on http://localhost:5173 ..."
-$FrontendProcess = Start-Process powershell -ArgumentList (
-    "-NoExit", "-Command",
-    "Set-Location '$RepoRoot\frontend'; npm run dev"
-) -PassThru
+$FrontendProcess = Start-Process powershell -ArgumentList "-NoExit -Command `"Set-Location '$FrontendDir'; npm run dev`"" -PassThru
 
 Write-Host ""
 Write-Host "Both servers launched in separate windows."
-Write-Host "Backend PID : $($BackendProcess.Id)"
-Write-Host "Frontend PID: $($FrontendProcess.Id)"
+Write-Host "Backend Terminal PID : $($BackendProcess.Id)"
+Write-Host "Frontend Terminal PID: $($FrontendProcess.Id)"
 Write-Host ""
 Write-Host "Press ENTER here to stop both servers, or close their windows manually."
 $null = Read-Host
 
-Write-Host "==> Stopping servers..."
-Stop-Process -Id $BackendProcess.Id  -Force -ErrorAction SilentlyContinue
-Stop-Process -Id $FrontendProcess.Id -Force -ErrorAction SilentlyContinue
-Write-Host "    Done."
+Write-Host "==> Stopping servers and cleaning up ports..."
+
+# Helper function to kill the window AND any child processes (Node / Python / Uvicorn) it spawned
+function Stop-ProcessTree ($ParentPid) {
+    if ($ParentPid) {
+        # Visual/Graceful window close first
+        Stop-Process -Id $ParentPid -Force -ErrorAction SilentlyContinue
+        
+        # WMI lookup to catch orphaned child processes holding the ports
+        Get-CimInstance Win32_Process | Where-Object { $_.ParentProcessId -eq $ParentPid } | ForEach-Object {
+            Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+Stop-ProcessTree -ParentPid $BackendProcess.Id
+Stop-ProcessTree -ParentPid $FrontendProcess.Id
+
+Write-Host "    Done. Ports 8000 and 5173 freed."
 ```
 
 **`test-all.ps1`** – Run all tests
@@ -820,52 +936,76 @@ Write-Host "    Done."
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
+# If scripts/test-all.ps1, $PSScriptRoot is repo/scripts. Parent is repo root.
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 $Failed   = $false
 
+# Define paths to executables
+$PytestExe = "$RepoRoot\.venv\Scripts\pytest.exe"
+$NpmExe    = Get-Command npm -ErrorAction SilentlyContinue
+
+# --------------------------------------------
+# Backend Tests (pytest)
+# --------------------------------------------
 Write-Host "=============================="
 Write-Host " Backend tests (pytest)"
 Write-Host "=============================="
-# .venv is at the repository root; activate before pushing into backend/.
-if (Test-Path "$RepoRoot\.venv\Scripts\Activate.ps1") {
-    & "$RepoRoot\.venv\Scripts\Activate.ps1"
-}
-Push-Location "$RepoRoot\backend"
-try {
-    python -m pytest tests/ -v
-    if ($LASTEXITCODE -ne 0) { $Failed = $true }
-    if (Get-Command deactivate -ErrorAction SilentlyContinue) { deactivate }
-}
-catch {
-    Write-Warning "Backend tests raised an exception: $_"
+
+if (-not (Test-Path $PytestExe)) {
+    Write-Warning "Virtual environment or pytest not found at: $PytestExe"
     $Failed = $true
-}
-finally {
-    Pop-Location
+} else {
+    Push-Location "$RepoRoot\backend"
+    try {
+        # Directly call the venv's pytest executable (no activation required)
+        & $PytestExe tests/ -v
+        if ($LASTEXITCODE -ne 0) { $Failed = $true }
+    }
+    catch {
+        Write-Warning "Backend tests failed to execute: $_"
+        $Failed = $true
+    }
+    finally {
+        Pop-Location
+    }
 }
 
-Write-Host ""
-Write-Host "=============================="
+# --------------------------------------------
+# Frontend Tests (vitest)
+# --------------------------------------------
+Write-Host "`n=============================="
 Write-Host " Frontend tests (vitest)"
 Write-Host "=============================="
-Push-Location "$RepoRoot\frontend"
-try {
-    npm run test
-    if ($LASTEXITCODE -ne 0) { $Failed = $true }
-}
-catch {
-    Write-Warning "Frontend tests raised an exception: $_"
+
+if (-not $NpmExe) {
+    Write-Warning "Node.js/npm is not installed or not in PATH."
     $Failed = $true
-}
-finally {
-    Pop-Location
+} else {
+    Push-Location "$RepoRoot\frontend"
+    try {
+        # Using cmd /c ensures npm executes predictably on Windows PowerShell
+        cmd /c npm run test
+        if ($LASTEXITCODE -ne 0) { $Failed = $true }
+    }
+    catch {
+        Write-Warning "Frontend tests failed to execute: $_"
+        $Failed = $true
+    }
+    finally {
+        Pop-Location
+    }
 }
 
+# --------------------------------------------
+# Test Results Execution
+# --------------------------------------------
 Write-Host ""
 if (-not $Failed) {
-    Write-Host "All tests passed."
+    Write-Host "All tests passed successfully!" -ForegroundColor Green
+    exit 0
 } else {
-    Write-Error "One or more test suites FAILED."
+    # Using Write-Host for the error avoids a messy PowerShell script stack trace
+    Write-Host "One or more test suites FAILED." -ForegroundColor Red
     exit 1
 }
 ```

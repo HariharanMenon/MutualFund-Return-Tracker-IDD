@@ -57,7 +57,7 @@ export default function TransactionGrid({ transactions }) {
         </table>
       </div>
       <p className="transaction-grid__count">
-        {transactionList.length} transaction{transactionList.length !== 1 ? 's' : ''}
+        {transactionList.length} row{transactionList.length !== 1 ? 's' : ''}
       </p>
     </div>
   );
