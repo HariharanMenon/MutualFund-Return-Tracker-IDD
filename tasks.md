@@ -143,18 +143,42 @@
 
 ---
 
-## Phase 14 — Developer Documentation (`/docs`)
+## Phase 14 — Transaction Type: Gross Purchase Support (Amendment)
 
-- [ ] T074 [P3] [Phase 14] [Deps: None] docs/README.md — Documentation index: overview of all docs, when to read each, links | docs/README.md
-- [ ] T075 [P3] [Phase 14] [Deps: T070] docs/SETUP.md — Installation & environment setup: prerequisites, .venv creation, backend + frontend setup, running locally | docs/SETUP.md
-- [ ] T076 [P3] [Phase 14] [Deps: T029] docs/API.md — Endpoint specifications: POST /api/upload request/response schemas, all error codes, example payloads | docs/API.md
-- [ ] T077 [P3] [Phase 14] [Deps: None] docs/ARCHITECTURE.md — Tech stack & design decisions: data flow diagram, service responsibilities, why FastAPI/React/Render, key constraints | docs/ARCHITECTURE.md
-- [ ] T078 [P3] [Phase 14] [Deps: T075] docs/DEVELOPMENT.md — Development workflow & conventions: branching, code style, adding a new validation rule, adding a new component | docs/DEVELOPMENT.md
-- [ ] T079 [P3] [Phase 14] [Deps: T036,T068] docs/TESTING.md — Testing strategy & coverage: backend pytest layout, frontend vitest layout, how to run, coverage targets, adding new tests | docs/TESTING.md
-- [ ] T080 [P3] [Phase 14] [Deps: T069] docs/DEPLOYMENT.md — Render deployment guide: render.yaml walkthrough, first-deploy steps, setting VITE_API_URL, redeploy process | docs/DEPLOYMENT.md
-- [ ] T081 [P3] [Phase 14] [Deps: T080] docs/RENDER-FREE-TIER.md — Free tier constraints & workarounds: cold-start delay, memory limit, ephemeral filesystem, concurrent upload limits, skeleton loader rationale | docs/RENDER-FREE-TIER.md
-- [ ] T082 [P3] [Phase 14] [Deps: None] docs/TROUBLESHOOTING.md — Common issues & FAQ: venv activation errors, CORS issues, XIRR convergence failures, Render cold-start tip, Excel format errors | docs/TROUBLESHOOTING.md
-- [ ] T083 [P3] [Phase 14] [Deps: T077] docs/images/ — Architecture & data flow diagrams (PNG/SVG): system architecture, data flow, component tree | docs/images/
+> **Context:** Real-world fund statements (e.g., MFUTILITY) include a "Gross Purchase" row that represents the total amount before splitting into "Net Purchase" + "Stamp Duty". This row always has empty Units, Price, and Unit Balance. It must be recognised without error, excluded from XIRR cash flows, and excluded from Total Invested (since Net Purchase and Stamp Duty already account for the same money and are tracked separately).
+
+- [x] T074 [P1] [Phase 14] [Deps: T012] Add GROSS_PURCHASE enum value; GROSS_PURCHASE_VARIANTS frozenset; "gross purchase" keyword in CATEGORY_KEYWORDS (before PURCHASE entry to prevent misclassification); add GROSS_PURCHASE to XIRR_EXCLUDED_CATEGORIES, PRICE_UNIT_BALANCE_EMPTY_CATEGORIES, UNITS_OPTIONAL_CATEGORIES; add GROSS_PURCHASE_NON_EMPTY_PRICE_UNIT_BALANCE error message template; add explanatory comment on why GROSS_PURCHASE is absent from TOTAL_INVESTED_CATEGORIES | backend/app/utils/constants.py
+
+- [x] T075 [P1] [Phase 14] [Deps: T074,T015] Add Tier-1 exact match block for GROSS_PURCHASE_VARIANTS; import GROSS_PURCHASE_VARIANTS from constants | backend/app/utils/transaction_normalizer.py
+
+- [x] T076 [P1] [Phase 14] [Deps: T074,T024] Add GROSS_PURCHASE message branch in the PRICE_UNIT_BALANCE_EMPTY_CATEGORIES error path (appears twice in validator — once for Price check, once for Unit Balance check) | backend/app/services/validator.py
+
+- [x] T077 [P1] [Phase 14] [Deps: T074,T035] Add normalizer tests: Tier-1 exact matches ("Gross Purchase", "gross purchase", "GROSS PURCHASE", "Gross Purchase Systematic"); Tier-2 keyword fallback ("Gross Purchase - via MFUTILITY", "Gross Purchase Systematic - Instalment 2/155"); priority test confirming "Gross Purchase - via MFUTILITY" → GROSS_PURCHASE not PURCHASE; is_known_type() returning True for all above | backend/tests/test_transaction_normalizer.py
+
+- [x] T078 [P1] [Phase 14] [Deps: T074,T031] Add valid_with_gross_purchase() and valid_with_gross_purchase_systematic() fixtures modelling real MFUTILITY pattern: Gross Purchase - via MFUTILITY → Net Purchase → Less: Stamp Duty → SELL | backend/tests/fixtures/test_data.py
+
+- [x] T079 [P1] [Phase 14] [Deps: T074,T078,T033] Add validator tests: valid_with_gross_purchase() passes without error; GROSS_PURCHASE row has units=None, price=None, unit_balance=None; Gross Purchase amount is absent from totalInvested calculation; gross_purchase_with_price() and gross_purchase_with_unit_balance() error cases | backend/tests/test_validator.py
+
+- [x] T080 [P3] [Phase 14] [Deps: None] Update feature spec — add Gross Purchase variants to transaction type list (Section 4.4); add Gross Purchase validation rule alongside Stamp Duty rule (Section 3/Step 4); clarify Total Invested excludes Gross Purchase (Section 5); add Gross Purchase decision log entry (Section 12); update version to 2.1, revised date to June 6, 2026, status to "Ready for Testing and Deployment" | intent/mutual-fund-xirr-tracker-feature.md
+
+- [x] T081 [P3] [Phase 14] [Deps: None] Update product structure doc — add GROSS_PURCHASE to TransactionCategory enum listing; add GROSS_PURCHASE_VARIANTS to variant sets; add "gross purchase" keyword entry in CATEGORY_KEYWORDS with ordering note; update XIRR_EXCLUDED_CATEGORIES, PRICE_UNIT_BALANCE_EMPTY_CATEGORIES, UNITS_OPTIONAL_CATEGORIES listings with explanatory comments; add comprehensive Constants section; add absence-from-TOTAL_INVESTED_CATEGORIES note; update version to 2.2, revised date to June 6, 2026, status to "Ready for Testing and Deployment" | intent/product-structure.md
+
+- [x] T082 [P3] [Phase 14] [Deps: None] Update Intent README — update Key Constraints section to mention Gross Purchase exclusion alongside Stamp Duty; update feature.md entry to v2.1 with status "Ready for Testing and Deployment"; update product-structure.md entry to v2.2 with status "Ready for Testing and Deployment"; update Document Versioning table with new versions and dates; update Version to 3 and Revision; update Document Metadata (last updated date) | intent/Intent_README.md
+
+---
+
+## Phase 15 — Developer Documentation (`/docs`)
+
+- [ ] T083 [P3] [Phase 15] [Deps: None] docs/README.md — Documentation index: overview of all docs, when to read each, links | docs/README.md
+- [ ] T084 [P3] [Phase 15] [Deps: T070] docs/SETUP.md — Installation & environment setup: prerequisites, .venv creation, backend + frontend setup, running locally | docs/SETUP.md
+- [ ] T085 [P3] [Phase 15] [Deps: T029] docs/API.md — Endpoint specifications: POST /api/upload request/response schemas, all error codes, example payloads | docs/API.md
+- [ ] T086 [P3] [Phase 15] [Deps: None] docs/ARCHITECTURE.md — Tech stack & design decisions: data flow diagram, service responsibilities, why FastAPI/React/Render, key constraints | docs/ARCHITECTURE.md
+- [ ] T087 [P3] [Phase 15] [Deps: T084] docs/DEVELOPMENT.md — Development workflow & conventions: branching, code style, adding a new validation rule, adding a new component | docs/DEVELOPMENT.md
+- [ ] T088 [P3] [Phase 15] [Deps: T036,T068] docs/TESTING.md — Testing strategy & coverage: backend pytest layout, frontend vitest layout, how to run, coverage targets, adding new tests | docs/TESTING.md
+- [ ] T089 [P3] [Phase 15] [Deps: T069] docs/DEPLOYMENT.md — Render deployment guide: render.yaml walkthrough, first-deploy steps, setting VITE_API_URL, redeploy process | docs/DEPLOYMENT.md
+- [ ] T090 [P3] [Phase 15] [Deps: T089] docs/RENDER-FREE-TIER.md — Free tier constraints & workarounds: cold-start delay, memory limit, ephemeral filesystem, concurrent upload limits, skeleton loader rationale | docs/RENDER-FREE-TIER.md
+- [ ] T091 [P3] [Phase 15] [Deps: None] docs/TROUBLESHOOTING.md — Common issues & FAQ: venv activation errors, CORS issues, XIRR convergence failures, Render cold-start tip, Excel format errors | docs/TROUBLESHOOTING.md
+- [ ] T092 [P3] [Phase 15] [Deps: T086] docs/images/ — Architecture & data flow diagrams (PNG/SVG): system architecture, data flow, component tree | docs/images/
 
 ---
 
@@ -173,6 +197,19 @@
 | Phase 9 — Frontend Components | T047–T053 | ✅ Complete |
 | Phase 10 — Frontend Hooks + App | T054–T058 | ✅ Complete |
 | Phase 11 — Frontend Tests | T059–T068 | ✅ Complete |
-| Phase 12 — Deployment & Documentation | T069, T070–T071 | ✅ Complete |
+| Phase 12 — Deployment & Documentation | T069–T071 | ✅ Complete |
 | Phase 13 — CI/CD Automation | T072–T073 | ⏳ Pending (Post-Launch) |
-| Phase 14 — Developer Documentation | T074–T083 | ⏳ Pending (Post-Launch) |
+| Phase 14 — Gross Purchase Support | T074–T082 | ✅ Complete |
+| Phase 15 — Developer Documentation | T083–T092 | ⏳ Pending (Post-Launch) |
+
+---
+
+## Document Metadata
+
+- **Type:** Implementation Task Tracker
+- **Version:** 2.1
+- **Created:** January 15, 2026
+- **Last Updated:** June 6, 2026
+- **Status:** Active (Phases 1–14 complete; Phase 14 Gross Purchase support fully implemented)
+- **Coverage:** 92 tasks across 15 phases
+- **Author:** Hari (Product Owner & Tech Lead)

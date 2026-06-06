@@ -71,6 +71,48 @@ def valid_sip() -> list[dict[str, Any]]:
     ]
 
 
+def valid_with_gross_purchase() -> list[dict[str, Any]]:
+    """Valid dataset modelling real MFUTILITY platform pattern.
+
+    Row breakdown (mirrors the real-world example):
+      1. Gross Purchase - via MFUTILITY  — gross summary row; Units/Price/UB empty.
+                                           Excluded from XIRR and Total Invested.
+      2. Net Purchase                    — actual investment row; Units/Price/UB populated.
+                                           Included in XIRR (outflow) and Total Invested.
+      3. Less: Stamp Duty                — cost row; Units/Price/UB empty.
+                                           Included in Total Invested, excluded from XIRR.
+      4. SELL                            — terminal row; Units populated, Price/UB empty.
+
+    The gross amount (10000) = net purchase (9999.50) + stamp duty (0.50).
+    Only the Net Purchase and Stamp Duty rows count toward Total Invested.
+    """
+    return [
+        _row("21-Jan-2026", "Gross Purchase - via MFUTILITY", 10000.00),
+        _row("21-Jan-2026", "Net Purchase", 9999.50, 293.439, 34.08, 293.439),
+        _row("21-Jan-2026", "Less: Stamp Duty", 0.50),
+        _row("01-May-2026", "SELL", 11500.00, 293.439),
+    ]
+
+
+def valid_with_gross_purchase_systematic() -> list[dict[str, Any]]:
+    """Valid dataset with Gross Purchase Systematic instalment variant.
+
+    Models a multi-instalment SIP where each instalment produces:
+      - a Gross Purchase Systematic row (summary, excluded from XIRR/Total Invested)
+      - a Net Purchase row (actual investment, included in XIRR/Total Invested)
+      - a Less: Stamp Duty row (cost, included in Total Invested only)
+    """
+    return [
+        _row("01-Jan-2026", "Gross Purchase Systematic - Instalment 1/12", 5000.00),
+        _row("01-Jan-2026", "Net Purchase", 4999.50, 100.0, 50.0, 100.0),
+        _row("01-Jan-2026", "Less: Stamp Duty", 0.50),
+        _row("01-Feb-2026", "Gross Purchase Systematic - Instalment 2/12", 5000.00),
+        _row("01-Feb-2026", "Net Purchase", 4999.50, 98.0, 51.02, 198.0),
+        _row("01-Feb-2026", "Less: Stamp Duty", 0.50),
+        _row("01-May-2026", "SELL", 11500.00, 198.0),
+    ]
+
+
 # ---------------------------------------------------------------------------
 # Invalid datasets — column/header errors
 # ---------------------------------------------------------------------------
@@ -233,6 +275,26 @@ def stamp_duty_with_unit_balance() -> list[dict[str, Any]]:
         _row("01-Jan-2020", "Purchase", 10000, 100.0, 100.0, 100.0),
         _row("01-Jan-2020", "Stamp Duty", 50, None, None, 100.0),
         _row("01-Jan-2021", "SELL", 11500, 100.0),
+    ]
+
+
+def gross_purchase_with_price() -> list[dict[str, Any]]:
+    """Gross Purchase row where Price is populated (must be empty)."""
+    return [
+        _row("21-Jan-2026", "Gross Purchase - via MFUTILITY", 10000.00, None, 34.08, None),
+        _row("21-Jan-2026", "Net Purchase", 9999.50, 293.439, 34.08, 293.439),
+        _row("21-Jan-2026", "Less: Stamp Duty", 0.50),
+        _row("01-May-2026", "SELL", 11500.00, 293.439),
+    ]
+
+
+def gross_purchase_with_unit_balance() -> list[dict[str, Any]]:
+    """Gross Purchase row where Unit Balance is populated (must be empty)."""
+    return [
+        _row("21-Jan-2026", "Gross Purchase - via MFUTILITY", 10000.00, None, None, 293.439),
+        _row("21-Jan-2026", "Net Purchase", 9999.50, 293.439, 34.08, 293.439),
+        _row("21-Jan-2026", "Less: Stamp Duty", 0.50),
+        _row("01-May-2026", "SELL", 11500.00, 293.439),
     ]
 
 

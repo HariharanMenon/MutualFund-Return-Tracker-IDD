@@ -14,11 +14,12 @@ Validates raw parsed Excel data against all spec rules (§3 Step 4, §6):
     6.  PURCHASE / DIVIDEND_REINVEST: Units, Price, Unit Balance required and positive
     7.  SELL / REDEMPTION: Units required and positive; Price and Unit Balance MUST be empty
     8.  STAMP_DUTY: Units optional; Price and Unit Balance MUST be empty
-    9.  Unit balance consistency: cumulative units must match Unit Balance column (within tolerance)
+    9.  GROSS_PURCHASE: Units optional; Price and Unit Balance MUST be empty
+    10. Unit balance consistency: cumulative units must match Unit Balance column (within tolerance)
 
   File-level:
-    10. Last transaction must be SELL or REDEMPTION
-    11. Cumulative unit balance must be ~0 after all transactions (full exit)
+    11. Last transaction must be SELL or REDEMPTION
+    12. Cumulative unit balance must be ~0 after all transactions (full exit)
 
 Returns a list of typed validated row dicts on success.
 Raises FileValidationError on the first detected violation.
@@ -177,7 +178,7 @@ def validate(raw_rows: list[dict[str, Any]]) -> list[dict]:
         )
 
     # ------------------------------------------------------------------ #
-    # Rules 3–9 — Per-row validation                                       #
+    # Rules 3–10 — Per-row validation                                      #
     # ------------------------------------------------------------------ #
     validated: list[dict] = []
     cumulative_units: float = 0.0
@@ -232,7 +233,7 @@ def validate(raw_rows: list[dict[str, Any]]) -> list[dict]:
         except ValueError as exc:
             raise FileValidationError(message="File validation failed", details=str(exc))
 
-        # ---- Units (Rules 6, 7, 8) ----
+        # ---- Units (Rules 6, 7, 8, 9) ----
         raw_units = raw.get(COL_UNITS)
         units_empty = _is_empty(raw_units)
 
@@ -256,13 +257,17 @@ def validate(raw_rows: list[dict[str, Any]]) -> list[dict]:
             except ValueError as exc:
                 raise FileValidationError(message="File validation failed", details=str(exc))
 
-        # ---- Price (Rules 6, 7, 8) ----
+        # ---- Price (Rules 6, 7, 8, 9) ----
         raw_price = raw.get(COL_PRICE)
         price_empty = _is_empty(raw_price)
 
         if category in PRICE_UNIT_BALANCE_EMPTY_CATEGORIES and not price_empty:
             if category == TransactionCategory.STAMP_DUTY:
                 detail = ErrorMessages.STAMP_DUTY_NON_EMPTY_PRICE_UNIT_BALANCE.format(
+                    row=row_num
+                )
+            elif category == TransactionCategory.GROSS_PURCHASE:
+                detail = ErrorMessages.GROSS_PURCHASE_NON_EMPTY_PRICE_UNIT_BALANCE.format(
                     row=row_num
                 )
             else:
@@ -288,13 +293,17 @@ def validate(raw_rows: list[dict[str, Any]]) -> list[dict]:
             except ValueError as exc:
                 raise FileValidationError(message="File validation failed", details=str(exc))
 
-        # ---- Unit Balance (Rules 6, 7, 8) ----
+        # ---- Unit Balance (Rules 6, 7, 8, 9) ----
         raw_ub = raw.get(COL_UNIT_BALANCE)
         ub_empty = _is_empty(raw_ub)
 
         if category in PRICE_UNIT_BALANCE_EMPTY_CATEGORIES and not ub_empty:
             if category == TransactionCategory.STAMP_DUTY:
                 detail = ErrorMessages.STAMP_DUTY_NON_EMPTY_PRICE_UNIT_BALANCE.format(
+                    row=row_num
+                )
+            elif category == TransactionCategory.GROSS_PURCHASE:
+                detail = ErrorMessages.GROSS_PURCHASE_NON_EMPTY_PRICE_UNIT_BALANCE.format(
                     row=row_num
                 )
             else:
@@ -320,12 +329,12 @@ def validate(raw_rows: list[dict[str, Any]]) -> list[dict]:
             except ValueError as exc:
                 raise FileValidationError(message="File validation failed", details=str(exc))
 
-        # ---- Cumulative unit tracking + consistency check (Rule 9) ----
+        # ---- Cumulative unit tracking + consistency check (Rule 10) ----
         if category in (TransactionCategory.PURCHASE, TransactionCategory.DIVIDEND_REINVEST):
             cumulative_units += units or 0.0
         elif category in (TransactionCategory.SELL, TransactionCategory.REDEMPTION):
             cumulative_units -= units or 0.0
-        # STAMP_DUTY: no unit change
+        # STAMP_DUTY and GROSS_PURCHASE: no unit change
 
         if unit_balance is not None:
             diff = abs(cumulative_units - unit_balance)
@@ -353,7 +362,7 @@ def validate(raw_rows: list[dict[str, Any]]) -> list[dict]:
         )
 
     # ------------------------------------------------------------------ #
-    # Rule 10 — Last transaction must be SELL or REDEMPTION               #
+    # Rule 11 — Last transaction must be SELL or REDEMPTION               #
     # ------------------------------------------------------------------ #
     last = validated[-1]
     if last["category"] not in TERMINAL_CATEGORIES:
@@ -365,7 +374,7 @@ def validate(raw_rows: list[dict[str, Any]]) -> list[dict]:
         )
 
     # ------------------------------------------------------------------ #
-    # Rule 11 — Full exit: cumulative units must be ~0                    #
+    # Rule 12 — Full exit: cumulative units must be ~0                    #
     # ------------------------------------------------------------------ #
     if abs(cumulative_units) > UNIT_BALANCE_TOLERANCE:
         raise FileValidationError(
