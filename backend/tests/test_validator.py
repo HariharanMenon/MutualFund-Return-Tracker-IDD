@@ -51,6 +51,39 @@ def test_valid_sip_passes():
     assert len(result) == 3
 
 
+def test_valid_with_gross_purchase_passes():
+    """Gross Purchase rows (summary rows) validate successfully without error.
+    They have empty Units, Price, and Unit Balance as required."""
+    result = validate(td.valid_with_gross_purchase())
+    assert len(result) == 4
+    # Verify the Gross Purchase row is parsed correctly
+    gross_row = result[0]
+    assert gross_row["category"].value == "GROSS_PURCHASE"
+    assert gross_row["raw_type"] == "Gross Purchase - via MFUTILITY"
+    assert gross_row["units"] is None
+    assert gross_row["price"] is None
+    assert gross_row["unit_balance"] is None
+    # Verify the Net Purchase row follows as expected
+    net_row = result[1]
+    assert net_row["category"].value == "PURCHASE"
+    assert net_row["raw_type"] == "Net Purchase"
+
+
+def test_valid_with_gross_purchase_systematic_passes():
+    """Gross Purchase Systematic (multi-instalment) variant validates successfully.
+    Each instalment has Gross Purchase → Net Purchase → Stamp Duty pattern."""
+    result = validate(td.valid_with_gross_purchase_systematic())
+    assert len(result) == 7
+    # First instalment Gross Purchase
+    gross_row_1 = result[0]
+    assert gross_row_1["category"].value == "GROSS_PURCHASE"
+    assert "Instalment 1/12" in gross_row_1["raw_type"]
+    # Second instalment Gross Purchase
+    gross_row_2 = result[3]
+    assert gross_row_2["category"].value == "GROSS_PURCHASE"
+    assert "Instalment 2/12" in gross_row_2["raw_type"]
+
+
 # ---------------------------------------------------------------------------
 # Rule 1 — Required column headers
 # ---------------------------------------------------------------------------
@@ -116,7 +149,7 @@ def test_negative_amount():
 
 
 # ---------------------------------------------------------------------------
-# Rules 6–8 — Conditional field requirements per transaction type
+# Rules 6–9 — Conditional field requirements per transaction type
 # ---------------------------------------------------------------------------
 
 def test_purchase_missing_units():
@@ -151,8 +184,18 @@ def test_stamp_duty_with_unit_balance_must_be_empty():
     _raises(td.stamp_duty_with_unit_balance(), match="empty")
 
 
+def test_gross_purchase_with_price_must_be_empty():
+    """Gross Purchase row with Price populated (must be empty) raises error."""
+    _raises(td.gross_purchase_with_price(), match="gross purchase")
+
+
+def test_gross_purchase_with_unit_balance_must_be_empty():
+    """Gross Purchase row with Unit Balance populated (must be empty) raises error."""
+    _raises(td.gross_purchase_with_unit_balance(), match="gross purchase")
+
+
 # ---------------------------------------------------------------------------
-# Rule 9 — Unit balance consistency
+# Rule 10 — Unit balance consistency
 # ---------------------------------------------------------------------------
 
 def test_unit_balance_mismatch():
@@ -160,7 +203,7 @@ def test_unit_balance_mismatch():
 
 
 # ---------------------------------------------------------------------------
-# Rule 10 — Last transaction must be SELL or REDEMPTION
+# Rule 11 — Last transaction must be SELL or REDEMPTION
 # ---------------------------------------------------------------------------
 
 def test_last_transaction_not_sell_or_redemption():
@@ -168,7 +211,7 @@ def test_last_transaction_not_sell_or_redemption():
 
 
 # ---------------------------------------------------------------------------
-# Rule 11 — Full exit: cumulative units ≈ 0
+# Rule 12 — Full exit: cumulative units ≈ 0
 # ---------------------------------------------------------------------------
 
 def test_partial_sell_cumulative_not_zero():
@@ -217,3 +260,35 @@ def test_stamp_duty_units_with_value_accepted():
     ]
     result = validate(rows)
     assert result[1]["units"] == 0.5
+
+
+def test_gross_purchase_units_optional():
+    """Gross Purchase with None units must pass (units are optional)."""
+    rows = [
+        {"date": "21-Jan-2026", "transaction type": "Gross Purchase - via MFUTILITY",
+         "amount": 10000, "units": None, "price": None, "unit balance": None},
+        {"date": "21-Jan-2026", "transaction type": "Net Purchase",
+         "amount": 9999.50, "units": 293.439, "price": 34.08, "unit balance": 293.439},
+        {"date": "21-Jan-2026", "transaction type": "Less: Stamp Duty",
+         "amount": 0.50, "units": None, "price": None, "unit balance": None},
+        {"date": "01-May-2026", "transaction type": "SELL",
+         "amount": 11500, "units": 293.439, "price": None, "unit_balance": None},
+    ]
+    result = validate(rows)
+    assert result[0]["units"] is None  # gross purchase units remain None
+
+
+def test_gross_purchase_units_with_value_accepted():
+    """Gross Purchase with a units value must also pass (units are optional, not forbidden)."""
+    rows = [
+        {"date": "21-Jan-2026", "transaction type": "Gross Purchase - via MFUTILITY",
+         "amount": 10000, "units": 100.0, "price": None, "unit balance": None},
+        {"date": "21-Jan-2026", "transaction type": "Net Purchase",
+         "amount": 9999.50, "units": 293.439, "price": 34.08, "unit balance": 293.439},
+        {"date": "21-Jan-2026", "transaction type": "Less: Stamp Duty",
+         "amount": 0.50, "units": None, "price": None, "unit balance": None},
+        {"date": "01-May-2026", "transaction type": "SELL",
+         "amount": 11500, "units": 293.439, "price": None, "unit_balance": None},
+    ]
+    result = validate(rows)
+    assert result[0]["units"] == 100.0

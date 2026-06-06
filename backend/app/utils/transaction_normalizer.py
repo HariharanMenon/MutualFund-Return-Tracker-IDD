@@ -16,6 +16,7 @@ from app.utils.constants import (
     REDEMPTION_VARIANTS,
     DIVIDEND_REINVEST_VARIANTS,
     STAMP_DUTY_VARIANTS,
+    GROSS_PURCHASE_VARIANTS,
     ALL_KNOWN_VARIANTS,
     CATEGORY_KEYWORDS,
     ErrorMessages,
@@ -36,7 +37,9 @@ def get_category(raw: str, row: int) -> TransactionCategory:
         containment against ``CATEGORY_KEYWORDS`` (in declared order).
         This handles real-world fund statement phrases such as:
         "Net Purchase", "Additional Purchase", "SWP Redemption",
-        "Switch In – Growth", "Fresh SIP", etc.
+        "Switch In – Growth", "Fresh SIP",
+        "Gross Purchase - via MFUTILITY", "Gross Purchase Systematic - Instalment 2/155",
+        etc.
 
     Parameters
     ----------
@@ -67,6 +70,14 @@ def get_category(raw: str, row: int) -> TransactionCategory:
         return TransactionCategory.DIVIDEND_REINVEST
     if key in STAMP_DUTY_VARIANTS:
         return TransactionCategory.STAMP_DUTY
+    if key in GROSS_PURCHASE_VARIANTS:
+        return TransactionCategory.GROSS_PURCHASE
+
+    # --- Tier 2: keyword-contains fallback ---
+    for category_name, keywords in CATEGORY_KEYWORDS.items():
+        for keyword in keywords:
+            if keyword in key:
+                return TransactionCategory[category_name]
 
     # --- Tier 2: keyword-contains fallback ---
     for category_name, keywords in CATEGORY_KEYWORDS.items():

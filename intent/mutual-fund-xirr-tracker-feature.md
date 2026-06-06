@@ -1,9 +1,9 @@
 # Intent: Mutual Fund XIRR Return Tracker
 
 **Date:** March 18, 2026  
-**Status:** Feature Specification – Ready for Development  
+**Status:** Feature Specification – Ready for Testing and Deployment  
 **Priority:** MVP (Minimum Viable Product)  
-**Revision:** 2.0 – Clarifications & Edge Cases Incorporated
+**Revision:** 2.1 – Gross Purchase Transaction Type Support Added
 
 ---
 
@@ -75,6 +75,7 @@ React State Update + Render Grid + Display XIRR + Summary Metrics
 If **any** of the following occur → **reject file with detailed error**:
 - Missing required column(s) (Date, Transaction Type, Amount)
 - **For Stamp Duty / STT Paid transactions:** Price and Unit Balance must be empty; Units is optional (can be empty)
+- **For Gross Purchase transactions (e.g., Gross Purchase - via MFUTILITY, Gross Purchase Systematic - Instalment N/N):** Price and Unit Balance must be empty; Units is optional (can be empty). Gross Purchase is a summary row representing the gross transaction amount before splitting into Net Purchase + Stamp Duty. It is excluded from XIRR cash flows and Total Invested calculation.
 - **For SELL/REDEMPTION transactions:** Price and Unit Balance must be empty/null (only Date, Transaction Type, Amount, Units required)
 - **For BUY/PURCHASE/SIP/Systematic Investment/DIVIDEND REINVEST transactions:** All columns required (Date, Transaction Type, Amount, Units, Price, Unit Balance)
 - Invalid data types in any row (e.g., non-date in Date column, non-numeric where required)
@@ -101,7 +102,7 @@ Return to user: **Specific error message** (e.g., "Row 5: Date column contains i
    - Format: `XIRR: 12.54%` (no "p.a.", "annualized", or year-specific notation)
    - XIRR is calculated for all transactions till date (not year-specific)
 5. **Summary metrics displayed** (mandatory):
-   - **Total Invested:** Sum of all PURCHASE/BUY/SIP/Systematic Investment/Stamp Duty/STT Paid transactions
+   - **Total Invested:** Sum of all PURCHASE/BUY/SIP/Systematic Investment/Stamp Duty/STT Paid transactions (Gross Purchase **excluded** — it is a summary row; the actual investment is captured by accompanying Net Purchase and Stamp Duty rows)
    - **Final Proceeds:** Amount from final SELL/REDEMPTION transaction
    - **Profit/Loss:** Final Proceeds – Total Invested (formatted as currency, green if positive, red if negative)
 
@@ -135,11 +136,11 @@ Return to user: **Specific error message** (e.g., "Row 5: Date column contains i
 #### 4.4 Transaction Grid
 - **Columns (fixed order):**
   1. Date (DD-MMM-YYYY format) — **Always required**
-  2. Transaction Type (Purchase, Buy, SIP, SIP Purchase, Systematic Investment, Systematic Investment Plan, SELL, REDEMPTION, DIVIDEND REINVEST, Stamp Duty, STT Paid, etc.) — **Always required**
+  2. Transaction Type (Purchase, Buy, SIP, SIP Purchase, Systematic Investment, Systematic Investment Plan, Gross Purchase, Gross Purchase Systematic, Gross Purchase - via MFUTILITY, SELL, REDEMPTION, DIVIDEND REINVEST, Stamp Duty, STT Paid, etc.) — **Always required**
   3. Amount (₹ or currency symbol, 2 decimal places) — **Always required**
-  4. Units (numeric, 3 decimal places) — **Required except for Stamp Duty / STT Paid (optional)**
-  5. Price (₹/unit, 2–4 decimal places as per user entry) — **Optional: Empty for SELL, REDEMPTION, Stamp Duty, and STT Paid transactions**
-  6. Unit Balance (cumulative units held, 3 decimal places) — **Optional: Empty for SELL, REDEMPTION, Stamp Duty, and STT Paid transactions**
+  4. Units (numeric, 3 decimal places) — **Required except for Stamp Duty / STT Paid / Gross Purchase (optional)**
+  5. Price (₹/unit, 2–4 decimal places as per user entry) — **Optional: Empty for SELL, REDEMPTION, Stamp Duty, Gross Purchase, and STT Paid transactions**
+  6. Unit Balance (cumulative units held, 3 decimal places) — **Optional: Empty for SELL, REDEMPTION, Stamp Duty, Gross Purchase, and STT Paid transactions**
 
 - **Display behavior:**
   - Rows in **file order** (no pre-sorting in v1)
@@ -549,6 +550,7 @@ class UploadResponse(BaseModel):
 | **DD-MMM-YYYY only** | Standardizes input; aligns with Indian financial statements | Rejects other formats; can be relaxed in v2 |
 | **Mandatory summary metrics** | Provides financial context for XIRR; improves UX | Slightly more backend processing |
 | **Stamp Duty/STT ignored in XIRR** | Stamp Duty/STT are one-time costs, not ongoing returns | May slightly understate true cost; acceptable for MVP |
+| **Gross Purchase excluded from XIRR and Total Invested** | Gross Purchase is a summary row; the actual cash flows are captured by Net Purchase + Stamp Duty in the same transaction group. Including it would double-count the invested amount. | Real-world fund statements (e.g., MFUTILITY) always split gross amount into Net Purchase + Stamp Duty rows, so exclusion is semantically correct. |
 
 ---
 
@@ -670,5 +672,5 @@ Render Free Instance
 ### Sign-Off
 - **Feature Owner:** Hari
 - **Prepared:** March 18, 2026  
-- **Revised:** March 19, 2026  
-- **Status:** Ready for Development
+- **Revised:** June 6, 2026 (Gross Purchase support added)
+- **Status:** Ready for Testing and Deployment

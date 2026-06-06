@@ -71,11 +71,23 @@ def test_stamp_duty_variants(raw):
 
 
 # ---------------------------------------------------------------------------
+# GROSS_PURCHASE variants — Tier 1 exact match
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("raw", [
+    "Gross Purchase", "gross purchase", "GROSS PURCHASE",
+    "Gross Purchase Systematic", "gross purchase systematic", "GROSS PURCHASE SYSTEMATIC",
+])
+def test_gross_purchase_variants(raw):
+    assert get_category(raw, 1) == TransactionCategory.GROSS_PURCHASE
+
+
+# ---------------------------------------------------------------------------
 # Whitespace tolerance
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("raw", [
-    "  Purchase  ", "\tSELL\t", " SIP ", "  Stamp Duty  ",
+    "  Purchase  ", "\tSELL\t", " SIP ", "  Stamp Duty  ", "  Gross Purchase  ",
 ])
 def test_whitespace_stripped(raw):
     result = get_category(raw, 1)
@@ -162,6 +174,23 @@ def test_stamp_duty_keyword_fallback(raw):
 
 
 # ---------------------------------------------------------------------------
+# Tier 2 — keyword-contains: GROSS_PURCHASE generic phrases
+# Real-world platform phrases (e.g. MFUTILITY) that contain "gross purchase"
+# but are not in the exact variant frozenset
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("raw", [
+    "Gross Purchase - via MFUTILITY",
+    "Gross Purchase Systematic - Instalment 2/155",
+    "Gross Purchase Systematic - Instalment 10/155",
+    "GROSS PURCHASE - VIA MFUTILITY",
+    "gross purchase - via mfutility",
+])
+def test_gross_purchase_keyword_fallback(raw):
+    assert get_category(raw, 1) == TransactionCategory.GROSS_PURCHASE
+
+
+# ---------------------------------------------------------------------------
 # Tier 2 — classification priority (ordering correctness)
 # These values contain keywords from multiple categories; verify the correct
 # one wins based on CATEGORY_KEYWORDS ordering in constants.py
@@ -178,6 +207,15 @@ def test_switch_out_beats_purchase():
 def test_switch_in_maps_to_purchase():
     # "switch in" is listed under PURCHASE
     assert get_category("Switch In - Growth", 1) == TransactionCategory.PURCHASE
+
+def test_gross_purchase_beats_purchase():
+    # "gross purchase" contains "purchase" — GROSS_PURCHASE must win because
+    # its keyword is checked before PURCHASE in CATEGORY_KEYWORDS
+    assert get_category("Gross Purchase - via MFUTILITY", 1) == TransactionCategory.GROSS_PURCHASE
+
+def test_gross_purchase_systematic_instalment_beats_purchase():
+    # Multi-word instalment variant must not fall through to PURCHASE
+    assert get_category("Gross Purchase Systematic - Instalment 2/155", 1) == TransactionCategory.GROSS_PURCHASE
 
 
 # ---------------------------------------------------------------------------
@@ -203,6 +241,8 @@ def test_is_known_type_true():
     assert is_known_type("Purchase") is True
     assert is_known_type("SELL") is True
     assert is_known_type("stamp duty") is True
+    assert is_known_type("Gross Purchase") is True
+    assert is_known_type("gross purchase systematic") is True
 
 
 # ---------------------------------------------------------------------------
@@ -215,6 +255,8 @@ def test_is_known_type_true_tier2():
     assert is_known_type("Switch Out") is True
     assert is_known_type("Dividend") is True
     assert is_known_type("Less: STT") is True
+    assert is_known_type("Gross Purchase - via MFUTILITY") is True
+    assert is_known_type("Gross Purchase Systematic - Instalment 2/155") is True
 
 
 # ---------------------------------------------------------------------------

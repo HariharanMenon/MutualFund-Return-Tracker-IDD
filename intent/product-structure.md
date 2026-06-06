@@ -1,9 +1,9 @@
 # Product Structure: MutualFund-Return-Tracker-IDD
 
-**Version:** 2.1  
+**Version:** 2.2  
 **Date:** March 19, 2026  
-**Last Updated:** June 04, 2026
-**Revision:** Updated progress and brought in sync scripts section
+**Last Updated:** June 6, 2026
+**Revision:** Gross Purchase transaction type support added
 **Context:** Stateless, in-memory file processing on Render free tier (single instance, cold-start delays acceptable)
 ---
 
@@ -245,6 +245,78 @@ REQUIRED_COLUMNS = ["date", "transaction type", "amount", "units", "price", "uni
 # ... transaction types, error messages, column mapping
 ```
 
+#### **Backend Constants (`app/utils/constants.py`)**
+
+**TransactionCategory Enum (Canonical Values)**
+```python
+class TransactionCategory(str, Enum):
+    PURCHASE = "PURCHASE"
+    SELL = "SELL"
+    REDEMPTION = "REDEMPTION"
+    DIVIDEND_REINVEST = "DIVIDEND_REINVEST"
+    STAMP_DUTY = "STAMP_DUTY"
+    GROSS_PURCHASE = "GROSS_PURCHASE"
+```
+
+**Transaction Type Variants (Tier 1 — Exact Match)**
+- `PURCHASE_VARIANTS`: "purchase", "buy", "sip", "sip purchase", "systematic investment", "systematic investment plan"
+- `SELL_VARIANTS`: "sell"
+- `REDEMPTION_VARIANTS`: "redemption"
+- `DIVIDEND_REINVEST_VARIANTS`: "dividend reinvest", "dividend reinvestment"
+- `STAMP_DUTY_VARIANTS`: "stamp duty", "stt paid", "less: stamp duty", "less: stt paid", "stamp duty - stt", "stt"
+- `GROSS_PURCHASE_VARIANTS`: "gross purchase", "gross purchase systematic"
+
+**Transaction Type Keywords (Tier 2 — Keyword-Contains Fallback)**
+| Category | Keywords |
+|----------|----------|
+| STAMP_DUTY | "stamp duty", "stt paid", "stt" |
+| DIVIDEND_REINVEST | "dividend reinvest", "dividend" |
+| REDEMPTION | "redemption", "switch out", "swp" |
+| SELL | "sell" |
+| GROSS_PURCHASE | "gross purchase" |
+| PURCHASE | "switch in", "systematic investment", "purchase", "sip", "buy" |
+
+**Note:** GROSS_PURCHASE keyword is checked **before** PURCHASE to prevent misclassification (e.g., "Gross Purchase - via MFUTILITY" contains "purchase" but must match GROSS_PURCHASE).
+
+**Functional Groupings (Used by Validator & XIRR Calculator)**
+```python
+# Money outflows in XIRR (negative cash flows)
+XIRR_OUTFLOW_CATEGORIES = {PURCHASE, DIVIDEND_REINVEST}
+
+# Money inflows in XIRR (positive cash flows)
+XIRR_INFLOW_CATEGORIES = {SELL, REDEMPTION}
+
+# Excluded from XIRR cash flows entirely
+XIRR_EXCLUDED_CATEGORIES = {STAMP_DUTY, GROSS_PURCHASE}
+# GROSS_PURCHASE excluded because it is a summary row;
+# the actual cash flows are captured by Net Purchase + Stamp Duty
+
+# Categories included in Total Invested summary metric
+TOTAL_INVESTED_CATEGORIES = {PURCHASE, STAMP_DUTY}
+# GROSS_PURCHASE intentionally excluded — would double-count invested amount
+
+# Valid terminal (last) transaction types
+TERMINAL_CATEGORIES = {SELL, REDEMPTION}
+
+# Price & Unit Balance must be empty
+PRICE_UNIT_BALANCE_EMPTY_CATEGORIES = {SELL, REDEMPTION, STAMP_DUTY, GROSS_PURCHASE}
+
+# Units is optional (can be empty without error)
+UNITS_OPTIONAL_CATEGORIES = {STAMP_DUTY, GROSS_PURCHASE}
+
+# Units is required (must be populated)
+UNITS_REQUIRED_CATEGORIES = {PURCHASE, SELL, REDEMPTION, DIVIDEND_REINVEST}
+
+# Price & Unit Balance required
+PRICE_UNIT_BALANCE_REQUIRED_CATEGORIES = {PURCHASE, DIVIDEND_REINVEST}
+```
+
+**Error Message Templates**
+- All row-level errors include 1-based row number
+- GROSS_PURCHASE error: "Row {row}: Gross Purchase transaction must have empty Price and Unit Balance columns"
+- STAMP_DUTY error: "Row {row}: Stamp Duty transaction must have empty Price and Unit Balance columns"
+- SELL/REDEMPTION error: "Row {row}: SELL/REDEMPTION transaction must have empty Price and Unit Balance columns"
+
 **`requirements.txt`** – Dependencies (Render installs from this)
 ```
 # Web framework (async HTTP server)
@@ -291,23 +363,28 @@ python-3.11.7
 
 **`app/services/validator.py`**
 - Validate column headers (case-insensitive, trim spaces)
-- Validate each row (date format, types, values)
+- Validate each row (date format, types, values, conditional field requirements per transaction type)
+- Transaction type-specific rules:
+  - **PURCHASE/DIVIDEND_REINVEST:** All fields required (Units, Price, Unit Balance)
+  - **SELL/REDEMPTION:** Units required; Price and Unit Balance must be empty
+  - **STAMP_DUTY:** Units optional; Price and Unit Balance must be empty
+  - **GROSS_PURCHASE:** Units optional; Price and Unit Balance must be empty (summary row, excluded from XIRR and Total Invested)
 - Validate file-level rules (final redemption, unit balance consistency)
 - Build detailed error messages with row numbers
 - Return `ValidationError` on failure, clean data on success
 
 **`app/services/transaction_processor.py`**
-- Normalize transaction types (case-insensitive variants)
+- Normalize transaction types (case-insensitive variants, keyword-based fallback for Gross Purchase and others)
 - Parse dates to DD-MMM-YYYY format
 - Round decimals to spec (Amount: 2, Units: 3, Price: 2-4)
-- Filter out Stamp Duty/STT for XIRR calculation
+- Filter out Stamp Duty/STT and Gross Purchase for XIRR calculation
 
 **`app/services/xirr_calculator.py`**
-- Build cash flow array (exclude Stamp Duty/STT)
+- Build cash flow array (exclude Stamp Duty/STT and Gross Purchase)
 - Calculate XIRR using numpy_financial.irr() or pyxirr
 - Handle convergence failures (return error)
 - Calculate summary metrics:
-  - Total Invested (sum of PURCHASE/SIP/Stamp Duty/STT)
+  - Total Invested (sum of PURCHASE/SIP/Stamp Duty/STT; **Gross Purchase excluded**)
   - Final Proceeds (SELL/REDEMPTION amount)
   - Profit/Loss (Final Proceeds - Total Invested)
 - Return formatted response
@@ -1320,14 +1397,14 @@ git push origin main
 
 ## Versioning & Updates
 
-### **Intent Document (`intent/feature-intent.md`)**
-- Version 2.0 (current, May 30, 2026)
+### **Intent Document (`intent/mutual-fund-xirr-tracker-feature.md`)**
+- Version 2.1 (current, June 6, 2026 — Gross Purchase support added)
 - Update when feature scope changes
 - Backward-compatible with existing product structure
 
 ### **Product Structure (`intent/product-structure.md`)**
-- Version 2.0 (current, May 30, 2026)
-- Update when folder layout or tech stack changes
+- Version 2.2 (current, June 6, 2026 — Gross Purchase support added)
+- Update when folder layout, tech stack, or transaction types change
 - Independent from intent versioning
 
 ### **Code**
@@ -1411,5 +1488,5 @@ Windows (PowerShell):
 
 ### Sign-Off
 - **Product Owner:** Hari
-- **Last Updated:** May 30, 2026
-- **Status:** Ready for Deployment
+- **Last Updated:** June 6, 2026 (Gross Purchase support added)
+- **Status:** Ready for Testing and Deployment
