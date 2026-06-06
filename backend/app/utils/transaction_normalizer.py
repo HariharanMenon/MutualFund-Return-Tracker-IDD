@@ -79,12 +79,6 @@ def get_category(raw: str, row: int) -> TransactionCategory:
             if keyword in key:
                 return TransactionCategory[category_name]
 
-    # --- Tier 2: keyword-contains fallback ---
-    for category_name, keywords in CATEGORY_KEYWORDS.items():
-        for keyword in keywords:
-            if keyword in key:
-                return TransactionCategory[category_name]
-
     raise ValueError(
         ErrorMessages.UNKNOWN_TRANSACTION_TYPE.format(row=row, value=raw)
     )
