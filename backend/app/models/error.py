@@ -29,14 +29,14 @@ class ErrorDetail(BaseModel):
     details: Optional[str] = Field(
         default=None,
         description="Specific error description with row numbers where applicable",
-        examples=["Row 5: Invalid date format 'xyz' (expected DD-MMM-YYYY, e.g., 15-Jan-2020)"],
+        examples=["Row 5: Invalid date format 'xyz' (expected DD/MM/YYYY, e.g., 18/12/2024)"],
     )
 
     model_config = {
         "json_schema_extra": {
             "example": {
                 "message": "File validation failed",
-                "details": "Row 5: Invalid date format 'xyz' (expected DD-MMM-YYYY, e.g., 15-Jan-2020)",
+                "details": "Row 5: Invalid date format 'xyz' (expected DD/MM/YYYY, e.g., 18/12/2024)",
             }
         }
     }

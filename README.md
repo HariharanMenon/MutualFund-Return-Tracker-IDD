@@ -212,8 +212,8 @@ User Browser
 |---------------------|--------------------------------------------------|
 | Max file size       | 10 MB                                            |
 | Max transactions    | 10,000 rows                                      |
-| Date format         | DD-MMM-YYYY only (e.g., 15-Jan-2020)             |
-| Date range          | 1960-01-01 → today                               |
+| Date format         | DD/MM/YYYY only (e.g., 18/12/2024)               |
+| Date range          | 01/01/1960 → today                               |
 | Final transaction   | Must be SELL/REDEMPTION with Unit Balance = 0    |
 | Stamp Duty / STT    | Included in Total Invested; excluded from XIRR   |
 | Worksheets          | First sheet only; extras are ignored             |
@@ -353,7 +353,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 **Solution:** Verify your Excel file has:
 - At least 2 transactions (1 buy + 1 redemption minimum)
 - Final transaction is SELL/REDEMPTION with Unit Balance = 0
-- All dates in DD-MMM-YYYY format (e.g., 15-Jan-2020)
+- All dates in DD/MM/YYYY format (e.g., 18/12/2024)
 - No missing required columns
 
 See [`intent/mutual-fund-xirr-tracker-feature.md`](intent/mutual-fund-xirr-tracker-feature.md) §6 for complete validation rules.
@@ -379,7 +379,7 @@ Planned features for v2+:
 | **Portfolio Aggregation** | Upload multiple statements; view combined portfolio metrics | High |
 | **Transaction History** | Persistent session storage (browser localStorage) with upload history | Medium |
 | **Advanced Filtering** | Filter transactions by date range, type, or category | Low |
-| **Custom Date Formats** | Support additional date formats beyond DD-MMM-YYYY | Low |
+| **Custom Date Formats** | Support additional date formats beyond DD/MM/YYYY | Low |
 
 **Design Principles for v2:**
 - Maintain stateless backend; use browser localStorage or session exports for persistence
@@ -415,3 +415,7 @@ If you encounter slow uploads or calculation times:
 ## License
 
 MIT
+
+---
+
+*Last updated: June 7, 2026 — Date format changed from DD-MMM-YYYY to DD/MM/YYYY*

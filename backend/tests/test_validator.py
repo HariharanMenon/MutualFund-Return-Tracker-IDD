@@ -125,7 +125,7 @@ def test_unknown_transaction_type():
 # ---------------------------------------------------------------------------
 
 def test_invalid_date_format():
-    _raises(td.invalid_date_format(), match="dd-mmm-yyyy")
+    _raises(td.invalid_date_format(), match="dd/mm/yyyy")
 
 
 def test_date_before_1960():
@@ -231,17 +231,17 @@ def test_validated_row_has_correct_keys():
 
 def test_validated_row_date_string_format():
     result = validate(td.valid_two_row())
-    assert result[0]["date_str"] == "01-Jan-2020"
+    assert result[0]["date_str"] == "01/01/2020"
 
 
 def test_stamp_duty_units_optional():
     """Stamp Duty with None units must pass (units are optional for stamp duty)."""
     rows = [
-        {"date": "01-Jan-2020", "transaction type": "Purchase",
+        {"date": "01/01/2020", "transaction type": "Purchase",
          "amount": 10000, "units": 100.0, "price": 100.0, "unit balance": 100.0},
-        {"date": "01-Jan-2020", "transaction type": "Stamp Duty",
+        {"date": "01/01/2020", "transaction type": "Stamp Duty",
          "amount": 50, "units": None, "price": None, "unit balance": None},
-        {"date": "01-Jan-2021", "transaction type": "SELL",
+        {"date": "01/01/2021", "transaction type": "SELL",
          "amount": 11500, "units": 100.0, "price": None, "unit balance": None},
     ]
     result = validate(rows)
@@ -251,11 +251,11 @@ def test_stamp_duty_units_optional():
 def test_stamp_duty_units_with_value_accepted():
     """Stamp Duty with a units value must also pass (units are optional, not forbidden)."""
     rows = [
-        {"date": "01-Jan-2020", "transaction type": "Purchase",
+        {"date": "01/01/2020", "transaction type": "Purchase",
          "amount": 10000, "units": 100.0, "price": 100.0, "unit balance": 100.0},
-        {"date": "01-Jan-2020", "transaction type": "Stamp Duty",
+        {"date": "01/01/2020", "transaction type": "Stamp Duty",
          "amount": 50, "units": 0.5, "price": None, "unit balance": None},
-        {"date": "01-Jan-2021", "transaction type": "SELL",
+        {"date": "01/01/2021", "transaction type": "SELL",
          "amount": 11500, "units": 100.0, "price": None, "unit balance": None},
     ]
     result = validate(rows)
@@ -265,13 +265,13 @@ def test_stamp_duty_units_with_value_accepted():
 def test_gross_purchase_units_optional():
     """Gross Purchase with None units must pass (units are optional)."""
     rows = [
-        {"date": "21-Jan-2026", "transaction type": "Gross Purchase - via MFUTILITY",
+        {"date": "21/01/2026", "transaction type": "Gross Purchase - via MFUTILITY",
          "amount": 10000, "units": None, "price": None, "unit balance": None},
-        {"date": "21-Jan-2026", "transaction type": "Net Purchase",
+        {"date": "21/01/2026", "transaction type": "Net Purchase",
          "amount": 9999.50, "units": 293.439, "price": 34.08, "unit balance": 293.439},
-        {"date": "21-Jan-2026", "transaction type": "Less: Stamp Duty",
+        {"date": "21/01/2026", "transaction type": "Less: Stamp Duty",
          "amount": 0.50, "units": None, "price": None, "unit balance": None},
-        {"date": "01-May-2026", "transaction type": "SELL",
+        {"date": "01/05/2026", "transaction type": "SELL",
          "amount": 11500, "units": 293.439, "price": None, "unit_balance": None},
     ]
     result = validate(rows)
@@ -281,13 +281,13 @@ def test_gross_purchase_units_optional():
 def test_gross_purchase_units_with_value_accepted():
     """Gross Purchase with a units value must also pass (units are optional, not forbidden)."""
     rows = [
-        {"date": "21-Jan-2026", "transaction type": "Gross Purchase - via MFUTILITY",
+        {"date": "21/01/2026", "transaction type": "Gross Purchase - via MFUTILITY",
          "amount": 10000, "units": 100.0, "price": None, "unit balance": None},
-        {"date": "21-Jan-2026", "transaction type": "Net Purchase",
+        {"date": "21/01/2026", "transaction type": "Net Purchase",
          "amount": 9999.50, "units": 293.439, "price": 34.08, "unit balance": 293.439},
-        {"date": "21-Jan-2026", "transaction type": "Less: Stamp Duty",
+        {"date": "21/01/2026", "transaction type": "Less: Stamp Duty",
          "amount": 0.50, "units": None, "price": None, "unit balance": None},
-        {"date": "01-May-2026", "transaction type": "SELL",
+        {"date": "01/05/2026", "transaction type": "SELL",
          "amount": 11500, "units": 293.439, "price": None, "unit_balance": None},
     ]
     result = validate(rows)

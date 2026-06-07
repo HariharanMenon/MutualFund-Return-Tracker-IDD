@@ -1,9 +1,9 @@
 # Product Structure: MutualFund-Return-Tracker-IDD
 
-**Version:** 2.2  
+**Version:** 2.3  
 **Date:** March 19, 2026  
-**Last Updated:** June 6, 2026
-**Revision:** Gross Purchase transaction type support added
+**Last Updated:** June 7, 2026
+**Revision:** Date format changed from DD-MMM-YYYY to DD/MM/YYYY
 **Context:** Stateless, in-memory file processing on Render free tier (single instance, cold-start delays acceptable)
 ---
 
@@ -52,7 +52,7 @@ MutualFund-Return-Tracker-IDD/
 │   │   │
 │   │   ├── utils/
 │   │   │   ├── __init__.py
-│   │   │   ├── date_parser.py             # Date parsing & validation (DD-MMM-YYYY)
+│   │   │   ├── date_parser.py             # Date parsing & validation (DD/MM/YYYY)
 │   │   │   ├── transaction_normalizer.py  # Transaction type normalization
 │   │   │   ├── constants.py               # Constants (transaction types, limits, errors)
 │   │   │   └── logger.py                  # Logging utility
@@ -375,7 +375,7 @@ python-3.11.7
 
 **`app/services/transaction_processor.py`**
 - Normalize transaction types (case-insensitive variants, keyword-based fallback for Gross Purchase and others)
-- Parse dates to DD-MMM-YYYY format
+- Parse dates to DD/MM/YYYY format
 - Round decimals to spec (Amount: 2, Units: 3, Price: 2-4)
 - Filter out Stamp Duty/STT and Gross Purchase for XIRR calculation
 
@@ -407,7 +407,7 @@ Response (200 OK):
     "profitLoss": 225500.00
   },
   "transactions": [
-    { "date": "15-Jan-2020", "transactionType": "Purchase", ... },
+    { "date": "18/12/2024", "transactionType": "Purchase", ... },
     ...
   ]
 }
@@ -417,7 +417,7 @@ Response (400 Bad Request):
   "success": false,
   "error": {
     "message": "File validation failed",
-    "details": "Row 5: Invalid date format 'xyz' (expected DD-MMM-YYYY)"
+    "details": "Row 5: Invalid date format 'xyz' (expected DD/MM/YYYY)"
   }
 }
 
@@ -551,7 +551,7 @@ export const uploadFile = async (file) => {
 
 **`formatting.js`** – Data Formatters
 - `formatCurrency(amount)` → "₹12,50,000.00"
-- `formatDate(dateStr)` → "15-Jan-2020"
+- `formatDate(dateStr)` → "18/12/2024"
 - `formatPercentage(num)` → "12.54%"
 - `formatUnits(num)` → "100.123"
 
@@ -1398,12 +1398,12 @@ git push origin main
 ## Versioning & Updates
 
 ### **Intent Document (`intent/mutual-fund-xirr-tracker-feature.md`)**
-- Version 2.1 (current, June 6, 2026 — Gross Purchase support added)
+- Version 2.2 (current, June 7, 2026 — Date format changed from DD-MMM-YYYY to DD/MM/YYYY)
 - Update when feature scope changes
 - Backward-compatible with existing product structure
 
 ### **Product Structure (`intent/product-structure.md`)**
-- Version 2.2 (current, June 6, 2026 — Gross Purchase support added)
+- Version 2.3 (current, June 7, 2026 — Date format changed from DD-MMM-YYYY to DD/MM/YYYY)
 - Update when folder layout, tech stack, or transaction types change
 - Independent from intent versioning
 
@@ -1488,5 +1488,5 @@ Windows (PowerShell):
 
 ### Sign-Off
 - **Product Owner:** Hari
-- **Last Updated:** June 6, 2026 (Gross Purchase support added)
-- **Status:** Ready for Testing and Deployment
+- **Last Updated:** June 7, 2026 (Date format changed from DD-MMM-YYYY to DD/MM/YYYY)
+- **Status:** Completed — Date Format Migration (DD/MM/YYYY)

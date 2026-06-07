@@ -20,9 +20,9 @@ export function formatCurrency(amount) {
 }
 
 /**
- * Returns the date string as-is (backend already returns DD-MMM-YYYY).
+ * Returns the date string as-is (backend already returns DD/MM/YYYY).
  * Returns EMPTY sentinel for null/undefined/empty input.
- * @param {string|null} dateStr  DD-MMM-YYYY from backend
+ * @param {string|null} dateStr  DD/MM/YYYY from backend
  * @returns {string}
  */
 export function formatDate(dateStr) {

@@ -106,7 +106,7 @@ class UploadResponse(BaseModel):
                         },
                         "transactions": [
                             {
-                                "date": "15-Jan-2020",
+                                "date": "18/12/2024",
                                 "transactionType": "Purchase",
                                 "amount": 10000.00,
                                 "units": 100.123,
@@ -126,7 +126,7 @@ class UploadResponse(BaseModel):
                         "transactions": None,
                         "error": {
                             "message": "File validation failed",
-                            "details": "Row 5: Invalid date format 'xyz' (expected DD-MMM-YYYY, e.g., 15-Jan-2020)",
+                            "details": "Row 5: Invalid date format 'xyz' (expected DD/MM/YYYY, e.g., 18/12/2024)",
                         },
                     },
                 },

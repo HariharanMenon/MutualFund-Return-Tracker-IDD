@@ -8,7 +8,7 @@ import TransactionGrid from '../../src/components/TransactionGrid.jsx';
 describe('TransactionGrid Component', () => {
   const mockTransactions = [
     {
-      date: '15-Jan-2020',
+      date: '15/01/2020',
       transactionType: 'Purchase',
       amount: 10000,
       units: 100.123,
@@ -16,7 +16,7 @@ describe('TransactionGrid Component', () => {
       unitBalance: 100.123,
     },
     {
-      date: '01-Feb-2020',
+      date: '01/02/2020',
       transactionType: 'Purchase',
       amount: 5000,
       units: 50.456,
@@ -24,7 +24,7 @@ describe('TransactionGrid Component', () => {
       unitBalance: 150.579,
     },
     {
-      date: '15-Mar-2021',
+      date: '15/03/2021',
       transactionType: 'REDEMPTION',
       amount: 15000,
       units: null,
@@ -37,9 +37,9 @@ describe('TransactionGrid Component', () => {
     it('renders table with all transactions', () => {
       render(<TransactionGrid transactions={mockTransactions} />);
 
-      expect(screen.getByText('15-Jan-2020')).toBeInTheDocument();
-      expect(screen.getByText('01-Feb-2020')).toBeInTheDocument();
-      expect(screen.getByText('15-Mar-2021')).toBeInTheDocument();
+      expect(screen.getByText('15/01/2020')).toBeInTheDocument();
+      expect(screen.getByText('01/02/2020')).toBeInTheDocument();
+      expect(screen.getByText('15/03/2021')).toBeInTheDocument();
     });
 
     it('renders 6 column headers', () => {
@@ -66,10 +66,10 @@ describe('TransactionGrid Component', () => {
   });
 
   describe('Column Content', () => {
-    it('displays date column in DD-MMM-YYYY format', () => {
+    it('displays date column in DD/MM/YYYY format', () => {
       render(<TransactionGrid transactions={mockTransactions} />);
 
-      expect(screen.getByText('15-Jan-2020')).toBeInTheDocument();
+      expect(screen.getByText('15/01/2020')).toBeInTheDocument();
     });
 
     it('displays transaction type column', () => {
@@ -118,9 +118,9 @@ describe('TransactionGrid Component', () => {
       const dateInFirstRow = rows[1]?.textContent;
       const dateInSecondRow = rows[2]?.textContent;
 
-      // First data row should be 15-Jan-2020 (file order)
-      expect(dateInFirstRow).toContain('15-Jan-2020');
-      expect(dateInSecondRow).toContain('01-Feb-2020');
+      // First data row should be 15/01/2020 (file order)
+      expect(dateInFirstRow).toContain('15/01/2020');
+      expect(dateInSecondRow).toContain('01/02/2020');
     });
 
     it('maintains transaction order as provided', () => {
@@ -130,8 +130,8 @@ describe('TransactionGrid Component', () => {
 
       const rows = screen.getAllByRole('row');
 
-      // First transaction should be REDEMPTION (15-Mar-2021)
-      expect(rows[1]?.textContent).toContain('15-Mar-2021');
+      // First transaction should be REDEMPTION (15/03/2021)
+      expect(rows[1]?.textContent).toContain('15/03/2021');
     });
   });
 
@@ -147,7 +147,7 @@ describe('TransactionGrid Component', () => {
     it('displays "—" for undefined values', () => {
       const transactionsWithUndefined = [
         {
-          date: '01-Jan-2020',
+          date: '01/01/2020',
           transactionType: 'Stamp Duty',
           amount: 100,
           units: undefined,
@@ -164,7 +164,7 @@ describe('TransactionGrid Component', () => {
     it('handles empty string values', () => {
       const transactionsWithEmpty = [
         {
-          date: '01-Jan-2020',
+          date: '01/01/2020',
           transactionType: 'STT Paid',
           amount: 50,
           units: '',
@@ -218,7 +218,7 @@ describe('TransactionGrid Component', () => {
   describe('Large Datasets', () => {
     it('renders many transactions without crashing', () => {
       const manyTransactions = Array.from({ length: 100 }, (_, i) => ({
-        date: '01-Jan-2020',
+        date: '01/01/2020',
         transactionType: 'Purchase',
         amount: 1000 * (i + 1),
         units: 100 + i,
@@ -255,7 +255,7 @@ describe('TransactionGrid Component', () => {
   describe('Special Transaction Types', () => {
     it('displays Stamp Duty transactions correctly', () => {
       const stampDutyTransaction = {
-        date: '01-Jan-2020',
+        date: '01/01/2020',
         transactionType: 'Stamp Duty',
         amount: 50,
         units: null,
@@ -270,7 +270,7 @@ describe('TransactionGrid Component', () => {
 
     it('displays Dividend Reinvest transactions', () => {
       const dividendTransaction = {
-        date: '10-Jan-2020',
+        date: '10/01/2020',
         transactionType: 'DIVIDEND REINVEST',
         amount: 500,
         units: 5.5,

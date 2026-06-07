@@ -1,8 +1,8 @@
 """
-date_parser.py — DD-MMM-YYYY date parsing and range validation.
+date_parser.py — DD/MM/YYYY date parsing and range validation.
 
 Spec requirements:
-- Accepted format: DD-MMM-YYYY  (e.g., 15-Jan-2020)
+- Accepted format: DD/MM/YYYY  (e.g., 18/12/2024)
 - Any other format → validation error with row number
 - Valid date range: 1960-01-01 to today (inclusive)
 - Future dates → validation error
@@ -13,8 +13,8 @@ from datetime import date, datetime
 
 from app.utils.constants import ErrorMessages
 
-# strptime format code for DD-MMM-YYYY
-_DATE_FMT: str = "%d-%b-%Y"
+# strptime format code for DD/MM/YYYY
+_DATE_FMT: str = "%d/%m/%Y"
 
 # Inclusive lower bound
 _MIN_DATE: date = date(1960, 1, 1)
@@ -65,10 +65,10 @@ def parse_date(raw: str, row: int) -> date:
 
 
 def format_date(d: date) -> str:
-    """Format a :class:`datetime.date` to DD-MMM-YYYY string.
+    """Format a :class:`datetime.date` to DD/MM/YYYY string.
 
     Example::
 
-        format_date(date(2020, 1, 15))  # "15-Jan-2020"
+        format_date(date(2024, 12, 18))  # "18/12/2024"
     """
     return d.strftime(_DATE_FMT)

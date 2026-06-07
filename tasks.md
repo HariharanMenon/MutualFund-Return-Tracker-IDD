@@ -25,7 +25,7 @@
 
 - [x] T012 [P1] [Phase 2] [Deps: T004] Transaction type sets, error message templates, column name constants | backend/app/utils/constants.py
 - [x] T013 [P1] [Phase 2] [Deps: None] Structured logging utility | backend/app/utils/logger.py
-- [x] T014 [P1] [Phase 2] [Deps: T004] DD-MMM-YYYY date parser + 1960–today range validation | backend/app/utils/date_parser.py
+- [x] T014 [P1] [Phase 2] [Deps: T004] DD/MM/YYYY date parser + 1960–today range validation | backend/app/utils/date_parser.py
 - [x] T015 [P1] [Phase 2] [Deps: T012] Transaction type normalizer (all spec variants → canonical form) | backend/app/utils/transaction_normalizer.py
 - [x] T016 [P1] [Phase 2] [Deps: None] FileValidationError custom exception | backend/app/exceptions/validation_error.py
 - [x] T017 [P1] [Phase 2] [Deps: None] FileProcessingError custom exception | backend/app/exceptions/file_error.py
@@ -167,18 +167,64 @@
 
 ---
 
-## Phase 15 — Developer Documentation (`/docs`)
+## Phase 15 — Date Format Migration: DD-MMM-YYYY → DD/MM/YYYY (Amendment)
 
-- [ ] T083 [P3] [Phase 15] [Deps: None] docs/README.md — Documentation index: overview of all docs, when to read each, links | docs/README.md
-- [ ] T084 [P3] [Phase 15] [Deps: T070] docs/SETUP.md — Installation & environment setup: prerequisites, .venv creation, backend + frontend setup, running locally | docs/SETUP.md
-- [ ] T085 [P3] [Phase 15] [Deps: T029] docs/API.md — Endpoint specifications: POST /api/upload request/response schemas, all error codes, example payloads | docs/API.md
-- [ ] T086 [P3] [Phase 15] [Deps: None] docs/ARCHITECTURE.md — Tech stack & design decisions: data flow diagram, service responsibilities, why FastAPI/React/Render, key constraints | docs/ARCHITECTURE.md
-- [ ] T087 [P3] [Phase 15] [Deps: T084] docs/DEVELOPMENT.md — Development workflow & conventions: branching, code style, adding a new validation rule, adding a new component | docs/DEVELOPMENT.md
-- [ ] T088 [P3] [Phase 15] [Deps: T036,T068] docs/TESTING.md — Testing strategy & coverage: backend pytest layout, frontend vitest layout, how to run, coverage targets, adding new tests | docs/TESTING.md
-- [ ] T089 [P3] [Phase 15] [Deps: T069] docs/DEPLOYMENT.md — Render deployment guide: render.yaml walkthrough, first-deploy steps, setting VITE_API_URL, redeploy process | docs/DEPLOYMENT.md
-- [ ] T090 [P3] [Phase 15] [Deps: T089] docs/RENDER-FREE-TIER.md — Free tier constraints & workarounds: cold-start delay, memory limit, ephemeral filesystem, concurrent upload limits, skeleton loader rationale | docs/RENDER-FREE-TIER.md
-- [ ] T091 [P3] [Phase 15] [Deps: None] docs/TROUBLESHOOTING.md — Common issues & FAQ: venv activation errors, CORS issues, XIRR convergence failures, Render cold-start tip, Excel format errors | docs/TROUBLESHOOTING.md
-- [ ] T092 [P3] [Phase 15] [Deps: T086] docs/images/ — Architecture & data flow diagrams (PNG/SVG): system architecture, data flow, component tree | docs/images/
+> **Context:** The accepted transaction date format is changing from `DD-MMM-YYYY` (e.g., `15-Jan-2020`) to `DD/MM/YYYY` (e.g., `18/12/2024`). This aligns with the format most Indian fund statement exports use in tabular Excel output. The change touches the core date parser, validation engine, all Pydantic models, the OpenAPI spec, config, frontend formatter, all test fixtures, and all intent/documentation files. Every layer must be updated atomically so no mismatched format references remain.
+
+- [x] T083 [P1] [Phase 15] [Deps: T004] Update `DATE_FORMAT` display label from `"DD-MMM-YYYY"` to `"DD/MM/YYYY"`; update inline comment on strptime conversion code | backend/config.py
+
+- [x] T084 [P1] [Phase 15] [Deps: T083,T014] Replace `_DATE_FMT` constant from `"%d-%b-%Y"` to `"%d/%m/%Y"`; update regex pattern used for pre-validation from `^\d{2}-[A-Za-z]{3}-\d{4}$` to `^\d{2}/\d{2}/\d{4}$`; update `format_date()` output; update all docstrings and inline comments referencing `DD-MMM-YYYY` | backend/app/utils/date_parser.py
+
+- [x] T085 [P1] [Phase 15] [Deps: T084,T012] Update error message template in `INVALID_DATE_FORMAT` from `(expected DD-MMM-YYYY, e.g., 15-Jan-2020)` to `(expected DD/MM/YYYY, e.g., 18/12/2024)`; update any other format-referencing string constants | backend/app/utils/constants.py
+
+- [x] T086 [P1] [Phase 15] [Deps: T084,T024] Update Excel serial-date normalizer inside `validator.py` to produce `DD/MM/YYYY` strings instead of `DD-MMM-YYYY`; update all inline comments referencing the old format | backend/app/services/validator.py
+
+- [x] T087 [P1] [Phase 15] [Deps: T084,T020] Update `date` field `description` and `examples` in Transaction Pydantic model from `"15-Jan-2020"` to `"18/12/2024"` and update docstring | backend/app/models/transaction.py
+
+- [x] T088 [P1] [Phase 15] [Deps: T084,T021,T022] Update all example payloads and field descriptions in `response.py` and `error.py` that embed date strings or format references | backend/app/models/response.py, backend/app/models/error.py
+
+- [x] T089 [P1] [Phase 15] [Deps: T084] Update OpenAPI spec: column requirements description; `pattern` regex for date field (`^\d{2}-[A-Za-z]{3}-\d{4}$` → `^\d{2}/\d{2}/\d{4}$`); all `description` fields and `examples` containing date strings or `DD-MMM-YYYY` references; all inline example error messages | backend/openapi.yaml
+
+- [x] T090 [P1] [Phase 15] [Deps: T085] Update `requirements.txt` comment from `# Better datetime parsing (critical for DD-MMM-YYYY transaction dates)` to reference `DD/MM/YYYY` | backend/requirements.txt
+
+- [x] T091 [P1] [Phase 15] [Deps: T084,T031] Update all valid date strings in `test_data.py` fixtures from `DD-MMM-YYYY` to `DD/MM/YYYY` format; flip `invalid_date_format()` fixture to supply a `DD-MMM-YYYY` string as the invalid example (since that format is now wrong); update fixture docstrings | backend/tests/fixtures/test_data.py
+
+- [x] T092 [P1] [Phase 15] [Deps: T084,T030] Update `invalid_dates_xlsx` fixture description in `conftest.py` from `"DD/MM/YYYY instead of DD-MMM-YYYY"` to `"DD-MMM-YYYY instead of DD/MM/YYYY"` | backend/tests/conftest.py
+
+- [x] T093 [P1] [Phase 15] [Deps: T085,T091,T033] Update `test_validator.py`: change `_raises(..., match="dd-mmm-yyyy")` to match `"dd/mm/yyyy"`; update any inline date literal strings in test rows; update test description strings | backend/tests/test_validator.py
+
+- [x] T094 [P1] [Phase 15] [Deps: T085,T091,T036] Update `test_routes_upload.py`: change assertion `assert "dd-mmm-yyyy" in ...` to `"dd/mm/yyyy"`; update date format assertion test to verify `DD/MM/YYYY` pattern in returned transactions; update any hardcoded date strings | backend/tests/test_routes_upload.py
+
+- [x] T095 [P1] [Phase 15] [Deps: T091,T034,T035,T032] Audit `test_xirr_calculator.py`, `test_transaction_normalizer.py`, and `test_file_parser.py` for any hardcoded `DD-MMM-YYYY` date strings or format references; update to `DD/MM/YYYY` | backend/tests/test_xirr_calculator.py, backend/tests/test_transaction_normalizer.py, backend/tests/test_file_parser.py
+
+- [x] T096 [P2] [Phase 15] [Deps: T044] Update `formatDate()` JSDoc comment and `@param` tag from `DD-MMM-YYYY` to `DD/MM/YYYY`; update any format constant or display label in `constants.js` | frontend/src/services/formatting.js, frontend/src/utils/constants.js
+
+- [x] T097 [P2] [Phase 15] [Deps: T096,T060] Update `formatting.test.js`: rename test description from `'returns date as-is when already in DD-MMM-YYYY format'` to `DD/MM/YYYY`; change test value from `'15-Jan-2020'` to `'18/12/2024'` | frontend/tests/services/formatting.test.js
+
+- [x] T098 [P2] [Phase 15] [Deps: T096,T067] Update `TransactionGrid.test.jsx`: rename test `'displays date column in DD-MMM-YYYY format'`; replace all mock transaction date values from `DD-MMM-YYYY` to `DD/MM/YYYY` format | frontend/tests/components/TransactionGrid.test.jsx
+
+- [x] T099 [P3] [Phase 15] [Deps: None] Update `mutual-fund-xirr-tracker-feature.md`: replace all `DD-MMM-YYYY` references with `DD/MM/YYYY` in validation rules (Section 3), column spec (Section 4), Transaction model code block, all error message examples, constraints table, acceptance checklist, and decision log (Section 12 — rewrite "Why DD-MMM-YYYY?" rationale to "Why DD/MM/YYYY?"); update version to 2.2, revised date to today, status to "Completed" | intent/mutual-fund-xirr-tracker-feature.md
+
+- [x] T100 [P3] [Phase 15] [Deps: None] Update `product-structure.md`: replace `DD-MMM-YYYY` with `DD/MM/YYYY` in `date_parser.py` module comment, processing pipeline description, all example error payloads, and column spec tables; update version to 2.3, revised date to today, status to "Completed" | intent/product-structure.md
+
+- [x] T101 [P3] [Phase 15] [Deps: T099,T100] Update `Intent_README.md`: replace `DD-MMM-YYYY` with `DD/MM/YYYY` in Key Constraints section; update `feature.md` entry to v2.2 and `product-structure.md` entry to v2.3 with new status in Document Versioning table; increment version to 4 and revision; update last-updated date | intent/Intent_README.md
+
+- [x] T102 [P3] [Phase 15] [Deps: None] Update `README.md`: replace `DD-MMM-YYYY` in constraints table, date format row, and all example date strings; update last-updated date if present | README.md
+
+---
+
+## Phase 16 — Developer Documentation (`/docs`)
+
+- [ ] T103 [P3] [Phase 16] [Deps: None] docs/README.md — Documentation index: overview of all docs, when to read each, links | docs/README.md
+- [ ] T104 [P3] [Phase 16] [Deps: T070] docs/SETUP.md — Installation & environment setup: prerequisites, .venv creation, backend + frontend setup, running locally | docs/SETUP.md
+- [ ] T105 [P3] [Phase 16] [Deps: T029] docs/API.md — Endpoint specifications: POST /api/upload request/response schemas, all error codes, example payloads | docs/API.md
+- [ ] T106 [P3] [Phase 16] [Deps: None] docs/ARCHITECTURE.md — Tech stack & design decisions: data flow diagram, service responsibilities, why FastAPI/React/Render, key constraints | docs/ARCHITECTURE.md
+- [ ] T107 [P3] [Phase 16] [Deps: T104] docs/DEVELOPMENT.md — Development workflow & conventions: branching, code style, adding a new validation rule, adding a new component | docs/DEVELOPMENT.md
+- [ ] T108 [P3] [Phase 16] [Deps: T036,T068] docs/TESTING.md — Testing strategy & coverage: backend pytest layout, frontend vitest layout, how to run, coverage targets, adding new tests | docs/TESTING.md
+- [ ] T109 [P3] [Phase 16] [Deps: T069] docs/DEPLOYMENT.md — Render deployment guide: render.yaml walkthrough, first-deploy steps, setting VITE_API_URL, redeploy process | docs/DEPLOYMENT.md
+- [ ] T110 [P3] [Phase 16] [Deps: T109] docs/RENDER-FREE-TIER.md — Free tier constraints & workarounds: cold-start delay, memory limit, ephemeral filesystem, concurrent upload limits, skeleton loader rationale | docs/RENDER-FREE-TIER.md
+- [ ] T111 [P3] [Phase 16] [Deps: None] docs/TROUBLESHOOTING.md — Common issues & FAQ: venv activation errors, CORS issues, XIRR convergence failures, Render cold-start tip, Excel format errors | docs/TROUBLESHOOTING.md
+- [ ] T112 [P3] [Phase 16] [Deps: T106] docs/images/ — Architecture & data flow diagrams (PNG/SVG): system architecture, data flow, component tree | docs/images/
 
 ---
 
@@ -200,16 +246,17 @@
 | Phase 12 — Deployment & Documentation | T069–T071 | ✅ Complete |
 | Phase 13 — CI/CD Automation | T072–T073 | ⏳ Pending (Post-Launch) |
 | Phase 14 — Gross Purchase Support | T074–T082 | ✅ Complete |
-| Phase 15 — Developer Documentation | T083–T092 | ⏳ Pending (Post-Launch) |
+| Phase 15 — Date Format Migration (DD/MM/YYYY) | T083–T102 | ✅ Complete |
+| Phase 16 — Developer Documentation | T103–T112 | ⏳ Pending (Post-Launch) |
 
 ---
 
 ## Document Metadata
 
 - **Type:** Implementation Task Tracker
-- **Version:** 2.1
+- **Version:** 2.3
 - **Created:** January 15, 2026
-- **Last Updated:** June 6, 2026
-- **Status:** Active (Phases 1–14 complete; Phase 14 Gross Purchase support fully implemented)
-- **Coverage:** 92 tasks across 15 phases
+- **Last Updated:** June 7, 2026
+- **Status:** Active (Phases 1–15 complete; Phase 16 Developer Documentation pending)
+- **Coverage:** 112 tasks across 16 phases
 - **Author:** Hari (Product Owner & Tech Lead)

@@ -86,9 +86,9 @@ def test_upload_stamp_duty_happy_path(client, stamp_duty_xlsx):
 
 
 def test_upload_transaction_date_format(client, valid_xlsx):
-    """Transaction dates returned in DD-MMM-YYYY format."""
+    """Transaction dates returned in DD/MM/YYYY format."""
     data = _post(client, valid_xlsx).json()
-    assert data["transactions"][0]["date"] == "01-Jan-2020"
+    assert data["transactions"][0]["date"] == "01/01/2020"
 
 
 def test_upload_transactions_in_file_order(client, valid_xlsx):
@@ -150,7 +150,7 @@ def test_upload_invalid_date_format_400(client, invalid_dates_xlsx):
 
 def test_upload_invalid_date_format_message(client, invalid_dates_xlsx):
     data = _post(client, invalid_dates_xlsx).json()
-    assert "dd-mmm-yyyy" in data["error"]["details"].lower()
+    assert "dd/mm/yyyy" in data["error"]["details"].lower()
 
 
 def test_upload_no_redemption_400(client, no_redemption_xlsx):

@@ -1,7 +1,7 @@
 # Intent Folder
-**Version:** 3  
-**Revised Date:** June 06, 2026  
-**Revision:** Added Gross Purchase transaction type support; updated feature.md to v2.1 and product-structure.md to v2.2
+**Version:** 4  
+**Revised Date:** June 07, 2026  
+**Revision:** Date format changed from DD-MMM-YYYY to DD/MM/YYYY; updated feature.md to v2.2 and product-structure.md to v2.3
 
 ## Overview
 The **Intent Folder** (`/intent`) is the centralized documentation hub for the **MutualFund-Return-Tracker-IDD** project. It contains:
@@ -22,24 +22,24 @@ This folder is the **source of truth** during development. Every phase reference
 - **Audience:** All team members (developers, reviewers, stakeholders)
 - **Update frequency:** Low (reflects folder organization, not project changes)
 
-### 2. **mutual-fund-xirr-tracker-feature.md** — Feature Specification (v2.1)
+### 2. **mutual-fund-xirr-tracker-feature.md** — Feature Specification (v2.2)
 - **File location:** `/intent/mutual-fund-xirr-tracker-feature.md`
 - **Shorthand in conversation:** "feature.md"
 - **Purpose:** Complete feature specification for the XIRR tracker application
 - **Scope:** User journeys, UI requirements, API contracts, validation rules, edge cases, testing checklist, decision log
 - **Audience:** Developers (backend & frontend), QA, product owner
 - **Update frequency:** As feature scope evolves (new validations, UI changes, API revisions)
-- **Status:** Ready for Testing and Deployment (June 6, 2026 — Gross Purchase support added)
+- **Status:** Completed — Date Format Migration (June 7, 2026 — DD/MM/YYYY format adopted)
 - **Size:** ~680 lines, 16 major sections
 
-### 3. **product-structure.md** — Architecture & Product Structure (v2.2)
+### 3. **product-structure.md** — Architecture & Product Structure (v2.3)
 - **File location:** `/intent/product-structure.md`
 - **Shorthand in conversation:** "structure.md" or "architecture doc" or "product-structure.md"
 - **Purpose:** Technical architecture, folder layout, deployment strategy, and file organization
 - **Scope:** Directory structure, tech stack rationale, Render free tier optimization, development workflow, scaling path, transaction type constants
 - **Audience:** Developers, DevOps, tech leads
 - **Update frequency:** When folder organization, tech stack, or transaction types change (less frequent than feature doc)
-- **Status:** Ready for Testing and Deployment (June 6, 2026 — Gross Purchase support added)
+- **Status:** Completed — Date Format Migration (June 7, 2026 — DD/MM/YYYY format adopted)
 - **Size:** ~900 lines, comprehensive architecture reference
 
 ---
@@ -108,8 +108,8 @@ A **free, stateless, browser-based tool** that:
 
 | Document | Version | Date | Status | Next Update Trigger |
 |----------|---------|------|--------|---------------------|
-| **feature.md** | 2.1 | June 6, 2026 | Ready for Testing and Deployment | New validation rules, UI changes, API revisions |
-| **product-structure.md** | 2.2 | June 6, 2026 | Ready for Testing and Deployment | Folder reorganization, tech stack changes, transaction type changes |
+| **feature.md** | 2.2 | June 7, 2026 | Completed — Date Format Migration | New validation rules, UI changes, API revisions |
+| **product-structure.md** | 2.3 | June 7, 2026 | Completed — Date Format Migration | Folder reorganization, tech stack changes, transaction type changes |
 
 ### Version Numbering
 - **Feature Doc:** Major.Minor (2.0, 2.1, 3.0)
@@ -160,7 +160,7 @@ A **free, stateless, browser-based tool** that:
 - **Error Handling:** Detailed error messages (e.g., "Row 5: Invalid date format")
 
 ### Key Constraints
-- **File Format:** DD-MMM-YYYY dates only (e.g., "15-Jan-2020")
+- **File Format:** DD/MM/YYYY dates only (e.g., "18/12/2024")
 - **Transaction Limit:** 10,000 rows max (safe for Render 512 MB memory)
 - **File Transactions:** Minimum 2 (1 buy + 1 redemption)
 - **Final Transaction:** Must be SELL/REDEMPTION with Unit Balance = 0
@@ -332,7 +332,7 @@ Phase 2 creates **detailed technical specifications** from feature.md that serve
 4. **Error Code Reference**
    - Codify all error messages from feature.md section 3.4
    - Map to HTTP status codes (400 for validation, 500 for server errors)
-   - Example: "Row 5: Date '01-01-2020' is invalid (expected DD-MMM-YYYY)"
+   - Example: "Row 5: Date '18/12/2024' is invalid (expected DD/MM/YYYY)"
 
 **Why Phase 2 Matters:**
 - Phase 3 (backend) uses these specs as a reference while coding
@@ -359,10 +359,10 @@ Phase 2 creates **detailed technical specifications** from feature.md that serve
 ✅ Catches data quality issues early
 ⚠️ Trade-off: Rejects borderline files; forces user to clean data
 
-### Why DD-MMM-YYYY Dates Only?
-✅ Standardized format (aligns with Indian financial statements)
-✅ Reduces parsing ambiguity
-⚠️ Trade-off: Rejects other formats (can support more in v2)
+### Why DD/MM/YYYY Dates Only?
+✅ Aligns with Indian tabular Excel fund statement exports
+✅ Reduces parsing ambiguity (numeric-only, no locale-specific month names)
+⚠️ Trade-off: Rejects DD-MMM-YYYY and other formats (can support more in v2)
 
 ### Why No Sorting in v1?
 ✅ Simpler frontend implementation (file order, no state overhead)
@@ -391,7 +391,7 @@ Phase 2 creates **detailed technical specifications** from feature.md that serve
 ## How Intent Relates to Code
 
 ### Example 1: File Validation
-- **Intent (feature.md, Section 3):** "Date column must be DD-MMM-YYYY format. Reject if invalid."
+- **Intent (feature.md, Section 3):** "Date column must be DD/MM/YYYY format. Reject if invalid."
 - **Product Structure:** "Validation logic lives in `backend/app/services/validator.py`"
 - **Code:** `validator.py` implements date parsing and returns specific error message
 
@@ -647,8 +647,8 @@ Happy building! 🚀
 
 **Document Metadata**
 - **Type:** Intent Folder Guide
-- **Version:** 3
+- **Version:** 4
 - **Created:** March 19, 2026
 - **Author:** Hari (Product Owner)
-- **Last Updated:** June 6, 2026 (Gross Purchase support added)
+- **Last Updated:** June 7, 2026 (Date format changed from DD-MMM-YYYY to DD/MM/YYYY)
 - **Status:** Active (Referenced during all development phases)

@@ -261,7 +261,7 @@ class ErrorMessages:
     # --- Date errors ---
     INVALID_DATE_FORMAT = (
         "Row {row}: Invalid date format '{value}' "
-        "(expected DD-MMM-YYYY, e.g., 15-Jan-2020)"
+        "(expected DD/MM/YYYY, e.g., 18/12/2024)"
     )
     DATE_BEFORE_MIN = (
         "Row {row}: Transaction date '{value}' is before 1960; cannot process"

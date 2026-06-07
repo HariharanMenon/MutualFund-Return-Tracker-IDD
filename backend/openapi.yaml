@@ -17,7 +17,7 @@ info:
     **Constraints:**
     - Maximum file size: 10 MB
     - Maximum transactions per file: 10,000 rows
-    - Date format: DD-MMM-YYYY only
+    - Date format: DD/MM/YYYY only
     - First worksheet only (additional sheets ignored)
     - Render free tier (cold-start delays ~30s expected)
   
@@ -57,7 +57,7 @@ paths:
         - Rows: ≥ 2 (at least 1 investment + 1 redemption), ≤ 10,000
         
         **Column Requirements (case-insensitive, whitespace trimmed):**
-        - Date (mandatory): DD-MMM-YYYY format only
+        - Date (mandatory): DD/MM/YYYY format only
         - Transaction Type (mandatory): BUY, PURCHASE, SIP, SELL, REDEMPTION, etc.
         - Amount (mandatory): Numeric currency amount
         - Units (conditional): Numeric; optional for Stamp Duty/STT
@@ -116,13 +116,13 @@ paths:
                       finalProceeds: 1475500.00
                       profitLoss: 225500.00
                     transactions:
-                      - date: "01-Jan-2020"
+                      - date: "01/01/2020"
                         transactionType: "BUY"
                         amount: 100000.00
                         units: 10000.000
                         price: 10.00
                         unitBalance: 10000.000
-                      - date: "15-Jan-2021"
+                      - date: "15/01/2021"
                         transactionType: "SELL"
                         amount: 118100.00
                         units: 10000.000
@@ -138,19 +138,19 @@ paths:
                       finalProceeds: 450000.00
                       profitLoss: -50000.00
                     transactions:
-                      - date: "01-Jan-2022"
+                      - date: "01/01/2022"
                         transactionType: "SIP"
                         amount: 50000.00
                         units: 5000.000
                         price: 10.00
                         unitBalance: 5000.000
-                      - date: "01-Feb-2022"
+                      - date: "01/02/2022"
                         transactionType: "SIP"
                         amount: 50000.00
                         units: 4500.000
                         price: 11.11
                         unitBalance: 9500.000
-                      - date: "01-Jan-2023"
+                      - date: "01/01/2023"
                         transactionType: "REDEMPTION"
                         amount: 450000.00
                         units: 9500.000
@@ -179,14 +179,14 @@ paths:
                     success: false
                     error:
                       message: "File validation failed"
-                      details: "Row 5: Date column contains invalid format '01-01-2020' (expected DD-MMM-YYYY, e.g., 15-Jan-2020)"
+                      details: "Row 5: Date column contains invalid format '15-Jan-2020' (expected DD/MM/YYYY, e.g., 18/12/2024)"
                 futureDate:
                   summary: Date is in the future
                   value:
                     success: false
                     error:
                       message: "File validation failed"
-                      details: "Row 3: Date '25-Dec-2026' is in the future. Transactions must be dated today or earlier."
+                      details: "Row 3: Date '25/12/2026' is in the future. Transactions must be dated today or earlier."
                 invalidTransactionType:
                   summary: Invalid transaction type
                   value:
@@ -372,10 +372,10 @@ components:
         date:
           type: string
           format: date
-          pattern: '^\d{2}-[A-Za-z]{3}-\d{4}$'
-          description: Transaction date in DD-MMM-YYYY format (e.g., 15-Jan-2020)
+          pattern: '^\d{2}/\d{2}/\d{4}$'
+          description: Transaction date in DD/MM/YYYY format (e.g., 18/12/2024)
           examples:
-            - "15-Jan-2020"
+            - "18/12/2024"
         transactionType:
           type: string
           description: Type of transaction (investment, exit, or fee)
@@ -517,13 +517,13 @@ components:
           minItems: 2
           maxItems: 10000
           examples:
-            - - date: "01-Jan-2020"
+            - - date: "01/01/2020"
                 transactionType: "BUY"
                 amount: 100000.00
                 units: 10000.000
                 price: 10.00
                 unitBalance: 10000.000
-              - date: "15-Jan-2021"
+              - date: "15/01/2021"
                 transactionType: "SELL"
                 amount: 118100.00
                 units: 10000.000
@@ -552,7 +552,7 @@ components:
             Detailed, actionable error message explaining what went wrong and how to fix it.
             Includes row numbers, column names, actual vs. expected values.
           examples:
-            - "Row 5: Date column contains invalid format '01-01-2020' (expected DD-MMM-YYYY, e.g., 15-Jan-2020)"
+            - "Row 5: Date column contains invalid format '15-Jan-2020' (expected DD/MM/YYYY, e.g., 18/12/2024)"
             - "Missing required column: 'Amount'. Columns found: Date, Transaction Type, Units"
             - "File size is 15.2 MB, but maximum allowed is 10 MB"
       required:
