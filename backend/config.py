@@ -19,9 +19,9 @@ ALLOWED_EXTENSIONS: tuple[str, ...] = (".xlsx",)
 MIN_DATE: date = date(1960, 1, 1)
 MAX_DATE: date = date.today          # evaluated at runtime via property
 
-DATE_FORMAT: str = "DD-MMM-YYYY"     # display label for error messages
+DATE_FORMAT: str = "DD/MM/YYYY"      # display label for error messages
 # strptime conversion code used internally
-_DATE_STRPTIME: str = "%d-%b-%Y"    # e.g.  15-Jan-2020
+_DATE_STRPTIME: str = "%d/%m/%Y"    # e.g.  18/12/2024
 
 # ============================================================
 # Required Excel column names (normalised: lowercase + stripped)

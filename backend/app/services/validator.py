@@ -9,7 +9,7 @@ Validates raw parsed Excel data against all spec rules (§3 Step 4, §6):
 
   Per-row (in file order, stops on first error):
     3.  Transaction type is recognised (case-insensitive)
-    4.  Date is DD-MMM-YYYY format, in range [1960-01-01, today]
+    4.  Date is DD/MM/YYYY format, in range [1960-01-01, today]
     5.  Amount is numeric and positive
     6.  PURCHASE / DIVIDEND_REINVEST: Units, Price, Unit Balance required and positive
     7.  SELL / REDEMPTION: Units required and positive; Price and Unit Balance MUST be empty
@@ -69,7 +69,7 @@ def _cell_to_date_string(raw: Any) -> str:
 
     openpyxl may return ``datetime.datetime`` objects for date-formatted cells
     (when data_only=True).  This function normalises those back to a
-    DD-MMM-YYYY string so parse_date() can apply its format + range checks.
+    DD/MM/YYYY string so parse_date() can apply its format + range checks.
     """
     if isinstance(raw, datetime.datetime):
         return format_date(raw.date())
@@ -133,7 +133,7 @@ def validate(raw_rows: list[dict[str, Any]]) -> list[dict]:
     list[dict]
         Validated rows in original file order.  Each dict contains:
 
-        - ``date_str``     — DD-MMM-YYYY string (for ``Transaction`` model)
+        - ``date_str``     — DD/MM/YYYY string (for ``Transaction`` model)
         - ``date``         — :class:`datetime.date` object (for XIRR)
         - ``raw_type``     — original transaction type string (display)
         - ``category``     — :class:`TransactionCategory`

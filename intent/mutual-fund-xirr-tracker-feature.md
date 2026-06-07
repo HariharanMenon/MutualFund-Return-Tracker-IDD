@@ -1,9 +1,9 @@
 # Intent: Mutual Fund XIRR Return Tracker
 
 **Date:** March 18, 2026  
-**Status:** Feature Specification – Ready for Testing and Deployment  
+**Status:** Completed — Date Format Migration (DD/MM/YYYY)  
 **Priority:** MVP (Minimum Viable Product)  
-**Revision:** 2.1 – Gross Purchase Transaction Type Support Added
+**Revision:** 2.2 – Date Format Changed from DD-MMM-YYYY to DD/MM/YYYY
 
 ---
 
@@ -80,7 +80,7 @@ If **any** of the following occur → **reject file with detailed error**:
 - **For BUY/PURCHASE/SIP/Systematic Investment/DIVIDEND REINVEST transactions:** All columns required (Date, Transaction Type, Amount, Units, Price, Unit Balance)
 - Invalid data types in any row (e.g., non-date in Date column, non-numeric where required)
 - Date outside acceptable range (transactions must be from 1960 onwards; reject dates before 1960 or in future)
-- Dates in invalid DD-MMM-YYYY format (e.g., "01-01-2020" rejected; only "01-Jan-2020" accepted)
+- Dates in invalid DD/MM/YYYY format (e.g., "01-Jan-2020" rejected; only "01/01/2020" accepted)
 - Negative amounts (except for SELL/REDEMPTION which have specific sign convention)
 - Missing final redemption/sale transaction (XIRR requires terminal cash flow)
 - Inconsistent unit balance where provided (cumulative units don't match Unit Balance column)
@@ -88,7 +88,7 @@ If **any** of the following occur → **reject file with detailed error**:
 - More than 10,000 transactions (too large for this tier)
 - Last transaction is not SELL/REDEMPTION with Unit Balance = 0
 
-Return to user: **Specific error message** (e.g., "Row 5: Date column contains invalid format 'xyz' (expected DD-MMM-YYYY, e.g., 15-Jan-2020)")
+Return to user: **Specific error message** (e.g., "Row 5: Date column contains invalid format 'xyz' (expected DD/MM/YYYY, e.g., 18/12/2024)")
 
 ### Step 5: Successful Processing
 1. **Grid loads** with skeleton loader visible during cold-start delay (Render)
@@ -135,7 +135,7 @@ Return to user: **Specific error message** (e.g., "Row 5: Date column contains i
 
 #### 4.4 Transaction Grid
 - **Columns (fixed order):**
-  1. Date (DD-MMM-YYYY format) — **Always required**
+  1. Date (DD/MM/YYYY format) — **Always required**
   2. Transaction Type (Purchase, Buy, SIP, SIP Purchase, Systematic Investment, Systematic Investment Plan, Gross Purchase, Gross Purchase Systematic, Gross Purchase - via MFUTILITY, SELL, REDEMPTION, DIVIDEND REINVEST, Stamp Duty, STT Paid, etc.) — **Always required**
   3. Amount (₹ or currency symbol, 2 decimal places) — **Always required**
   4. Units (numeric, 3 decimal places) — **Required except for Stamp Duty / STT Paid / Gross Purchase (optional)**
@@ -192,7 +192,7 @@ Response (200 OK):
   },
   "transactions": [
     {
-      "date": "15-Jan-2020",
+      "date": "18/12/2024",
       "transactionType": "Purchase",
       "amount": 10000,
       "units": 100.123,
@@ -208,7 +208,7 @@ Response (400 Bad Request):
   "success": false,
   "error": {
     "message": "File validation failed",
-    "details": "Row 5: Date column contains invalid format 'xyz' (expected DD-MMM-YYYY, e.g., 15-Jan-2020)"
+    "details": "Row 5: Date column contains invalid format 'xyz' (expected DD/MM/YYYY, e.g., 18/12/2024)"
   }
 }
 
@@ -245,7 +245,7 @@ Response (500 Internal Server Error - XIRR Convergence):
 
 ```python
 class Transaction(BaseModel):
-    date: str  # DD-MMM-YYYY format
+    date: str  # DD/MM/YYYY format
     transactionType: str  # Case-insensitive normalized
     amount: float  # Positive for PURCHASE, positive for SELL (inflow)
     units: Optional[float] = None  # 3 decimal places; nullable for Stamp Duty/STT Paid
@@ -284,7 +284,7 @@ class UploadResponse(BaseModel):
 
 | Column | Required | Type | Format | Nullable | Notes |
 |--------|----------|------|--------|----------|-------|
-| **Date** | Yes | String | DD-MMM-YYYY (e.g., 15-Jan-2020) | No | Must be between 1960-01-01 and today; reject dates outside this range |
+| **Date** | Yes | String | DD/MM/YYYY (e.g., 18/12/2024) | No | Must be between 1960-01-01 and today; reject dates outside this range |
 | **Transaction Type** | Yes | String | Case-insensitive; see normalization rules | No | Must match recognized transaction types |
 | **Amount** | Yes | Numeric | Positive (PURCHASE/SELL sign convention) | No | For PURCHASE: positive (outflow); For SELL/REDEMPTION: positive (inflow) |
 | **Units** | Conditional | Numeric | 3 decimal places | Yes (for Stamp Duty/STT Paid only) | Nullable for Stamp Duty/STT Paid; required for all others |
@@ -338,8 +338,8 @@ class UploadResponse(BaseModel):
 | Unit balance mismatch | `"Row 7: Unit Balance '100' doesn't match cumulative units '95'"` | Yes |
 | Insufficient transactions | `"Insufficient data: At least 2 transactions required (1 investment + 1 redemption)"` | Yes |
 | File too large | `"File too large: Maximum 10,000 transactions allowed (your file has 15,234)"` | Yes |
-| Invalid date format | `"Row 5: Invalid date format 'abc' (expected DD-MMM-YYYY, e.g., 15-Jan-2020)"` | Yes |
-| Date outside range | `"Row 12: Transaction date '01-Jan-1950' is before 1960; cannot process"` | Yes |
+| Invalid date format | `"Row 5: Invalid date format 'abc' (expected DD/MM/YYYY, e.g., 18/12/2024)"` | Yes |
+| Date outside range | `"Row 12: Transaction date '01/01/1950' is before 1960; cannot process"` | Yes |
 | Non-numeric amount | `"Row 3: Amount must be numeric; got 'xyz'"` | Yes |
 | Negative amount | `"Row 4: Amount must be positive; got '-500'"` | Yes |
 | Stamp Duty/STT validation | `"Row 6: Stamp Duty transaction must have empty Price and Unit Balance columns"` | Yes |
@@ -420,7 +420,7 @@ class UploadResponse(BaseModel):
 | **Required final redemption** | Final transaction must be SELL/REDEMPTION with Unit Balance = 0 | XIRR requires terminal cash flow and complete exit |
 | **Single worksheet** | Only first worksheet parsed; additional worksheets ignored | Simplifies parsing; user can split files if needed |
 | **Date range** | Transactions from 1960 onwards only; reject future dates | Practical range for financial data |
-| **Date format** | DD-MMM-YYYY only (e.g., 15-Jan-2020) | Standardizes input; rejects other formats |
+| **Date format** | DD/MM/YYYY only (e.g., 18/12/2024) | Standardizes input; rejects other formats |
 | **Decimal precision** | XIRR: 2 decimals; Amount: 2 decimals; Units: 3 decimals; Price: 2–4 (user entry) | Financial standard for India (₹ system) |
 | **Strict validation** | File rejected on data inconsistencies; conditional field requirements enforced per transaction type | Ensures accuracy for financial calculations |
 | **Column header matching** | Case-insensitive; leading/trailing spaces trimmed | Handles user typos; flexible parsing |
@@ -443,7 +443,7 @@ class UploadResponse(BaseModel):
 - [ ] **API documentation:** Auto-generated Swagger docs (FastAPI provides this automatically)
 - [ ] **Advanced metrics:** CAGR, absolute return %, MWR vs TWR comparison
 - [ ] **Currency support:** Handle multi-currency transactions
-- [ ] **Date format flexibility:** Accept multiple date formats (DD-MM-YYYY, YYYY-MM-DD, etc.)
+- [ ] **Date format flexibility:** Accept multiple date formats (DD-MMM-YYYY, YYYY-MM-DD, etc.)
 
 ---
 
@@ -461,7 +461,7 @@ class UploadResponse(BaseModel):
 
 ### Data Validation
 - [ ] Reject missing columns with specific column name
-- [ ] Reject invalid date formats with row number + expected format (DD-MMM-YYYY)
+- [ ] Reject invalid date formats with row number + expected format (DD/MM/YYYY)
 - [ ] Reject dates outside 1960–today range with specific error
 - [ ] Reject non-numeric values in numeric columns with row number
 - [ ] Reject files without final SELL/REDEMPTION with Unit Balance = 0
@@ -547,7 +547,7 @@ class UploadResponse(BaseModel):
 | **10MB, 10k rows limit** | Safe for Render free tier (~512 MB memory) | Some power users may hit limits; upgrade path available |
 | **Detailed error messages** | Helps users fix files independently | Requires verbose backend validation logic |
 | **Case-insensitive headers** | Handles diverse fund statement formats | Requires normalization logic |
-| **DD-MMM-YYYY only** | Standardizes input; aligns with Indian financial statements | Rejects other formats; can be relaxed in v2 |
+| **DD/MM/YYYY only** | Standardizes input; aligns with Indian tabular Excel fund statement exports | Rejects other formats including DD-MMM-YYYY; can be extended in future version |
 | **Mandatory summary metrics** | Provides financial context for XIRR; improves UX | Slightly more backend processing |
 | **Stamp Duty/STT ignored in XIRR** | Stamp Duty/STT are one-time costs, not ongoing returns | May slightly understate true cost; acceptable for MVP |
 | **Gross Purchase excluded from XIRR and Total Invested** | Gross Purchase is a summary row; the actual cash flows are captured by Net Purchase + Stamp Duty in the same transaction group. Including it would double-count the invested amount. | Real-world fund statements (e.g., MFUTILITY) always split gross amount into Net Purchase + Stamp Duty rows, so exclusion is semantically correct. |
@@ -672,5 +672,5 @@ Render Free Instance
 ### Sign-Off
 - **Feature Owner:** Hari
 - **Prepared:** March 18, 2026  
-- **Revised:** June 6, 2026 (Gross Purchase support added)
-- **Status:** Ready for Testing and Deployment
+- **Revised:** June 7, 2026 (Date format changed from DD-MMM-YYYY to DD/MM/YYYY)
+- **Status:** Completed — Date Format Migration (DD/MM/YYYY)

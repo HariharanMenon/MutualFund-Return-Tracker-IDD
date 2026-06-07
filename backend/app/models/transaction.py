@@ -12,7 +12,7 @@ Field nullability follows the spec exactly (§5 Data Model, §6 Validation Rules
   price           | PURCHASE, DIVIDEND_REINVEST            | SELL, REDEMPTION, STAMP_DUTY
   unitBalance     | PURCHASE, DIVIDEND_REINVEST            | SELL, REDEMPTION, STAMP_DUTY
 
-The model stores display-ready values (date as DD-MMM-YYYY string; amounts
+The model stores display-ready values (date as DD/MM/YYYY string; amounts
 already rounded by transaction_processor.py before construction).
 """
 
@@ -26,8 +26,8 @@ class Transaction(BaseModel):
 
     date: str = Field(
         ...,
-        description="Transaction date in DD-MMM-YYYY format (e.g., 15-Jan-2020)",
-        examples=["15-Jan-2020"],
+        description="Transaction date in DD/MM/YYYY format (e.g., 18/12/2024)",
+        examples=["18/12/2024"],
     )
     transactionType: str = Field(
         ...,
@@ -67,7 +67,7 @@ class Transaction(BaseModel):
     model_config = {
         "json_schema_extra": {
             "example": {
-                "date": "15-Jan-2020",
+                "date": "18/12/2024",
                 "transactionType": "Purchase",
                 "amount": 10000.00,
                 "units": 100.123,

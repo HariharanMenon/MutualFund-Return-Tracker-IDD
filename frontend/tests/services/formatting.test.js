@@ -50,8 +50,8 @@ describe('Formatting Service', () => {
   });
 
   describe('formatDate()', () => {
-    it('returns date as-is when already in DD-MMM-YYYY format', () => {
-      expect(formatDate('15-Jan-2020')).toBe('15-Jan-2020');
+    it('returns date as-is when already in DD/MM/YYYY format', () => {
+      expect(formatDate('18/12/2024')).toBe('18/12/2024');
     });
 
     it('returns sentinel for null', () => {
@@ -76,7 +76,7 @@ describe('Formatting Service', () => {
 
     it('returns date string regardless of format (no transformation)', () => {
       // Formatters assume backend returns correct format
-      expect(formatDate('01-Feb-2021')).toBe('01-Feb-2021');
+      expect(formatDate('01/02/2021')).toBe('01/02/2021');
     });
   });
 

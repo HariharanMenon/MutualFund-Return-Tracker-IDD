@@ -80,9 +80,9 @@ def test_empty_rows_skipped():
     xlsx = _make_xlsx(
         ["Date", "Transaction Type", "Amount", "Units", "Price", "Unit Balance"],
         [
-            ["01-Jan-2020", "Purchase", 10000, 100.0, 100.0, 100.0],
+            ["01/01/2020", "Purchase", 10000, 100.0, 100.0, 100.0],
             [None, None, None, None, None, None],   # fully empty → should be skipped
-            ["01-Jan-2021", "SELL", 11500, 100.0, None, None],
+            ["01/01/2021", "SELL", 11500, 100.0, None, None],
         ],
     )
     rows = parse_excel(xlsx)
@@ -123,8 +123,8 @@ def test_none_cells_preserved():
     xlsx = _make_xlsx(
         ["Date", "Transaction Type", "Amount", "Units", "Price", "Unit Balance"],
         [
-            ["01-Jan-2020", "Purchase", 10000, 100.0, 100.0, 100.0],
-            ["01-Jan-2021", "SELL", 11500, 100.0, None, None],
+            ["01/01/2020", "Purchase", 10000, 100.0, 100.0, 100.0],
+            ["01/01/2021", "SELL", 11500, 100.0, None, None],
         ],
     )
     rows = parse_excel(xlsx)

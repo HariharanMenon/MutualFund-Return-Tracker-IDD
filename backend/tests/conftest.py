@@ -64,8 +64,8 @@ def valid_xlsx() -> bytes:
     return make_xlsx_bytes(
         _HEADERS,
         [
-            ["01-Jan-2020", "Purchase", 10000, 100.0, 100.0, 100.0],
-            ["01-Jan-2021", "SELL", 11500, 100.0, None, None],
+            ["01/01/2020", "Purchase", 10000, 100.0, 100.0, 100.0],
+            ["01/01/2021", "SELL", 11500, 100.0, None, None],
         ],
     )
 
@@ -76,9 +76,9 @@ def stamp_duty_xlsx() -> bytes:
     return make_xlsx_bytes(
         _HEADERS,
         [
-            ["01-Jan-2020", "Purchase", 10000, 100.0, 100.0, 100.0],
-            ["01-Jan-2020", "Stamp Duty", 50, None, None, None],
-            ["01-Jan-2021", "SELL", 11500, 100.0, None, None],
+            ["01/01/2020", "Purchase", 10000, 100.0, 100.0, 100.0],
+            ["01/01/2020", "Stamp Duty", 50, None, None, None],
+            ["01/01/2021", "SELL", 11500, 100.0, None, None],
         ],
     )
 
@@ -89,9 +89,9 @@ def dividend_reinvest_xlsx() -> bytes:
     return make_xlsx_bytes(
         _HEADERS,
         [
-            ["01-Jan-2020", "Purchase", 10000, 100.0, 100.0, 100.0],
-            ["01-Jul-2020", "Dividend Reinvest", 500, 5.0, 100.0, 105.0],
-            ["01-Jan-2021", "SELL", 12000, 105.0, None, None],
+            ["01/01/2020", "Purchase", 10000, 100.0, 100.0, 100.0],
+            ["01/07/2020", "Dividend Reinvest", 500, 5.0, 100.0, 105.0],
+            ["01/01/2021", "SELL", 12000, 105.0, None, None],
         ],
     )
 
@@ -110,12 +110,12 @@ def missing_date_col_xlsx() -> bytes:
 
 @pytest.fixture(scope="session")
 def invalid_dates_xlsx() -> bytes:
-    """Xlsx with a date in wrong format (DD/MM/YYYY instead of DD-MMM-YYYY)."""
+    """Xlsx with a date in wrong format (DD-MMM-YYYY instead of DD/MM/YYYY)."""
     return make_xlsx_bytes(
         _HEADERS,
         [
-            ["01/01/2020", "Purchase", 10000, 100.0, 100.0, 100.0],
-            ["01-Jan-2021", "SELL", 11500, 100.0, None, None],
+            ["01-Jan-2020", "Purchase", 10000, 100.0, 100.0, 100.0],
+            ["01/01/2021", "SELL", 11500, 100.0, None, None],
         ],
     )
 
@@ -126,8 +126,8 @@ def no_redemption_xlsx() -> bytes:
     return make_xlsx_bytes(
         _HEADERS,
         [
-            ["01-Jan-2020", "Purchase", 10000, 100.0, 100.0, 100.0],
-            ["01-Jun-2020", "Purchase", 5000, 45.0, 111.11, 145.0],
+            ["01/01/2020", "Purchase", 10000, 100.0, 100.0, 100.0],
+            ["01/06/2020", "Purchase", 5000, 45.0, 111.11, 145.0],
         ],
     )
 
@@ -139,8 +139,8 @@ def multi_sheet_xlsx() -> bytes:
     ws1 = wb.active
     ws1.title = "Transactions"
     ws1.append(_HEADERS)
-    ws1.append(["01-Jan-2020", "Purchase", 10000, 100.0, 100.0, 100.0])
-    ws1.append(["01-Jan-2021", "SELL", 11500, 100.0, None, None])
+    ws1.append(["01/01/2020", "Purchase", 10000, 100.0, 100.0, 100.0])
+    ws1.append(["01/01/2021", "SELL", 11500, 100.0, None, None])
     ws2 = wb.create_sheet("IgnoredSheet")
     ws2.append(["garbage", "data", "that", "should", "be", "ignored"])
     buf = io.BytesIO()
@@ -154,7 +154,7 @@ def uppercase_headers_xlsx() -> bytes:
     return make_xlsx_bytes(
         ["DATE", "TRANSACTION TYPE", "AMOUNT", "UNITS", "PRICE", "UNIT BALANCE"],
         [
-            ["01-Jan-2020", "Purchase", 10000, 100.0, 100.0, 100.0],
-            ["01-Jan-2021", "SELL", 11500, 100.0, None, None],
+            ["01/01/2020", "Purchase", 10000, 100.0, 100.0, 100.0],
+            ["01/01/2021", "SELL", 11500, 100.0, None, None],
         ],
     )

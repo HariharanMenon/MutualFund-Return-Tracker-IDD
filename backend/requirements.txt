@@ -30,7 +30,7 @@ python-multipart==0.0.7
 # pandas 2.3.1: UPGRADED from 2.2.3 & original one of 2.1.4 (19 months proven, nearly 2 years!)
 # - Released August 2024, thoroughly tested in production
 # - 50+ bug fixes over 2.2.3
-# - Better datetime parsing (critical for DD-MMM-YYYY transaction dates)
+# - Better datetime parsing (critical for DD/MM/YYYY transaction dates)
 # - Improved Excel integration with openpyxl
 # - Better memory efficiency for 10k-row limit files
 # - Superior handling of edge cases in financial data
