@@ -1,9 +1,9 @@
 # Intent: Mutual Fund XIRR Return Tracker
 
 **Date:** March 18, 2026  
-**Status:** Completed — Date Format Migration (DD/MM/YYYY)  
+**Status:** Completed — Download Sample Template Feature  
 **Priority:** MVP (Minimum Viable Product)  
-**Revision:** 2.2 – Date Format Changed from DD-MMM-YYYY to DD/MM/YYYY
+**Revision:** 2.3 – Download Sample Template feature added to Upload Area
 
 ---
 
@@ -57,6 +57,7 @@ React State Update + Render Grid + Display XIRR + Summary Metrics
   - Grid area (initially empty/instructional)
 
 ### Step 2: Upload Excel File
+- User can download `MFTransaction_Template.xlsx` directly from the upload area before uploading, using the "Download sample template" link
 - User uploads Excel file (e.g., mutual_fund_transactions.xlsx)
 - **Upload validation** (frontend):
   - File is `.xlsx` format
@@ -118,6 +119,7 @@ Return to user: **Specific error message** (e.g., "Row 5: Date column contains i
 - File size validation: ≤ 10 MB (show error if exceeded)
 - **Disabled during upload** (prevent multiple simultaneous uploads)
 - Shows **spinner while uploading** (labeled "Processing file...")
+- **Template download link** ("Download sample template") rendered inline in the secondary text area; hidden when upload is in progress; uses HTML `download` attribute for direct file save without navigation; `onClick` stops propagation to prevent triggering the drop-zone click handler
 
 #### 4.2 XIRR Display Panel
 - **Prominent, large text** (at least 36px font)
@@ -673,4 +675,5 @@ Render Free Instance
 - **Feature Owner:** Hari
 - **Prepared:** March 18, 2026  
 - **Revised:** June 7, 2026 (Date format changed from DD-MMM-YYYY to DD/MM/YYYY)
-- **Status:** Completed — Date Format Migration (DD/MM/YYYY)
+- **Revised:** June 8, 2026 (Download Sample Template feature added to Upload Area)
+- **Status:** Completed — Download Sample Template Feature

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { isValidFileSize, isValidFileType } from '../services/validation.js';
-import { FILE_SIZE_LIMIT_LABEL, ACCEPTED_FILE_EXTENSION } from '../utils/constants.js';
+import { FILE_SIZE_LIMIT_LABEL, ACCEPTED_FILE_EXTENSION, TEMPLATE_FILE_NAME, TEMPLATE_DOWNLOAD_URL } from '../utils/constants.js';
 import './UploadArea.css';
 
 /**
@@ -99,7 +99,17 @@ export default function UploadArea({ onFile, disabled = false }) {
         </p>
         {!disabled && (
           <p className="upload-area__secondary">
-            or <span className="upload-area__link">browse files</span>
+            <a
+              className="upload-area__template-link"
+              href={TEMPLATE_DOWNLOAD_URL}
+              download={TEMPLATE_FILE_NAME}
+              aria-label="Download sample Excel template"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Download sample template
+            </a>
+            , add your transactions, then{' '}
+            <span className="upload-area__link">browse to upload</span>.
             <br />
             <span className="upload-area__hint">Maximum size: {FILE_SIZE_LIMIT_LABEL}</span>
           </p>

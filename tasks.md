@@ -213,18 +213,45 @@
 
 ---
 
-## Phase 16 — Developer Documentation (`/docs`)
 
-- [ ] T103 [P3] [Phase 16] [Deps: None] docs/README.md — Documentation index: overview of all docs, when to read each, links | docs/README.md
-- [ ] T104 [P3] [Phase 16] [Deps: T070] docs/SETUP.md — Installation & environment setup: prerequisites, .venv creation, backend + frontend setup, running locally | docs/SETUP.md
-- [ ] T105 [P3] [Phase 16] [Deps: T029] docs/API.md — Endpoint specifications: POST /api/upload request/response schemas, all error codes, example payloads | docs/API.md
-- [ ] T106 [P3] [Phase 16] [Deps: None] docs/ARCHITECTURE.md — Tech stack & design decisions: data flow diagram, service responsibilities, why FastAPI/React/Render, key constraints | docs/ARCHITECTURE.md
-- [ ] T107 [P3] [Phase 16] [Deps: T104] docs/DEVELOPMENT.md — Development workflow & conventions: branching, code style, adding a new validation rule, adding a new component | docs/DEVELOPMENT.md
-- [ ] T108 [P3] [Phase 16] [Deps: T036,T068] docs/TESTING.md — Testing strategy & coverage: backend pytest layout, frontend vitest layout, how to run, coverage targets, adding new tests | docs/TESTING.md
-- [ ] T109 [P3] [Phase 16] [Deps: T069] docs/DEPLOYMENT.md — Render deployment guide: render.yaml walkthrough, first-deploy steps, setting VITE_API_URL, redeploy process | docs/DEPLOYMENT.md
-- [ ] T110 [P3] [Phase 16] [Deps: T109] docs/RENDER-FREE-TIER.md — Free tier constraints & workarounds: cold-start delay, memory limit, ephemeral filesystem, concurrent upload limits, skeleton loader rationale | docs/RENDER-FREE-TIER.md
-- [ ] T111 [P3] [Phase 16] [Deps: None] docs/TROUBLESHOOTING.md — Common issues & FAQ: venv activation errors, CORS issues, XIRR convergence failures, Render cold-start tip, Excel format errors | docs/TROUBLESHOOTING.md
-- [ ] T112 [P3] [Phase 16] [Deps: T106] docs/images/ — Architecture & data flow diagrams (PNG/SVG): system architecture, data flow, component tree | docs/images/
+---
+
+## Phase 16 — Download Sample Template Feature (Amendment)
+
+> **Context:** End users need a way to download a pre-formatted sample Excel template (`MFTransaction_Template.xlsx`) directly from the upload area before uploading their own data. A “Download sample template” link is added inside `UploadArea.jsx`, placed inline before “or browse files”, so users can grab the template without leaving the page. The template file is served as a static asset from `frontend/public/`. This phase covers the static asset, constants, UI, CSS, tests, intent documents, and a final `tasks.md` sync.
+
+- [x] T103 [P2] [Phase 16] [Deps: None] Place `MFTransaction_Template.xlsx` in `frontend/public/` so Vite serves it as a static asset at the root path `/MFTransaction_Template.xlsx`; verify the file is not excluded by `.gitignore` (binary assets should be committed) | frontend/public/MFTransaction_Template.xlsx
+
+- [x] T104 [P2] [Phase 16] [Deps: T103] Add two constants to `constants.js`: `TEMPLATE_FILE_NAME = 'MFTransaction_Template.xlsx'` and `TEMPLATE_DOWNLOAD_URL = '/MFTransaction_Template.xlsx'`; add JSDoc comment explaining these are used by the `UploadArea` download link | frontend/src/utils/constants.js
+
+- [x] T105 [P2] [Phase 16] [Deps: T104,T053] Update `UploadArea.jsx`: import `TEMPLATE_FILE_NAME` and `TEMPLATE_DOWNLOAD_URL` from constants; replace the `!disabled` secondary text block with a single `<p className="upload-area__secondary">` whose content reads “↓ [Download sample template], add your transactions, then [browse to upload].” — where “Download sample template” is an `<a>` with `href={TEMPLATE_DOWNLOAD_URL}`, `download={TEMPLATE_FILE_NAME}`, `className="upload-area__template-link"`, `aria-label="Download sample Excel template"`, and `onClick={(e) => e.stopPropagation()}`; and “browse to upload” retains the existing `<span className="upload-area__link">` that triggers `inputRef.current?.click()` via the parent div; remove the old `<br />` separator; keep `Maximum size` hint on a separate `<span className="upload-area__hint">` below the sentence | frontend/src/components/UploadArea.jsx
+
+- [x] T106 [P2] [Phase 16] [Deps: T105,T053] Add `.upload-area__template-link` styles to `UploadArea.css`: color using the existing accent/link CSS variable, `text-decoration: underline`, font-size matching `.upload-area__secondary`, cursor `pointer`; ensure `onClick` stopPropagation in JSX prevents the parent drop-zone click from firing when the link is clicked | frontend/src/components/UploadArea.css
+
+- [x] T107 [P2] [Phase 16] [Deps: T105,T064] Update `UploadArea.test.jsx`: add test — download link renders with correct `href` (`/MFTransaction_Template.xlsx`) and `download` attribute when `disabled={false}`; add test — download link is absent from the DOM when `disabled={true}`; add test — link has `aria-label="Download sample Excel template"`; update any snapshot tests if present | frontend/tests/components/UploadArea.test.jsx
+
+- [x] T108 [P3] [Phase 16] [Deps: T105] Update `mutual-fund-xirr-tracker-feature.md`: in Section 3 (User Journey, Step 2) add bullet “User can download `MFTransaction_Template.xlsx` directly from the upload area before uploading”; in Section 4.1 (Upload Area UI requirements) add “Template download link (↓ Download sample template) rendered inline before ‘or browse files’; hidden when upload is in progress; uses HTML `download` attribute for direct file save”; update version `2.2 → 2.3`, revised date to today, revision note “Added Download Sample Template feature” | intent/mutual-fund-xirr-tracker-feature.md
+
+- [x] T109 [P3] [Phase 16] [Deps: T103,T104,T108] Update `product-structure.md`: in the directory layout tree under `frontend/`, add `public/` folder entry with `MFTransaction_Template.xlsx` and comment “Static template asset — served at /MFTransaction_Template.xlsx”; in the constants section add `TEMPLATE_FILE_NAME` and `TEMPLATE_DOWNLOAD_URL` with descriptions; update version `2.3 → 2.4`, revised date to today, revision note “Added template asset and constants for Download Sample Template feature” | intent/product-structure.md
+
+- [x] T110 [P3] [Phase 16] [Deps: T108,T109] Update `Intent_README.md`: in Document Versioning table update `feature.md` to v2.3 with status “Completed — Download Sample Template”; update `product-structure.md` to v2.4 with status “Completed — Download Sample Template”; update Intent README version `4 → 5`, revision note “feature.md → v2.3, product-structure.md → v2.4 for Download Sample Template phase”; update last-updated date | intent/Intent_README.md
+
+- [x] T111 [P3] [Phase 16] [Deps: T108,T109,T110] Update `README.md` at project root: add "Download sample template" bullet to the Features list; update IDD table version references (feature.md → v2.3, product-structure.md → v2.4); update last-updated date and note | README.md
+
+- [x] T112 [P3] [Phase 16] [Deps: T103,T104,T105,T106,T107,T108,T109,T110,T111] Update `tasks.md` to reflect Phase 16 completion: increment version `2.3 → 2.4`; update last-updated date; update status line to "Active (Phases 1–16 complete; Phase 17 Developer Documentation pending)"; update coverage count to 122 tasks across 17 phases; update Summary table — mark Phase 16 row (T103–T112, ✅ Complete) and Phase 17 as ⏳ Pending | tasks.md
+
+## Phase 17 — Developer Documentation (`/docs`)
+
+- [ ] T113 [P3] [Phase 17] [Deps: None] docs/README.md — Documentation index: overview of all docs, when to read each, links | docs/README.md
+- [ ] T114 [P3] [Phase 17] [Deps: T070] docs/SETUP.md — Installation & environment setup: prerequisites, .venv creation, backend + frontend setup, running locally | docs/SETUP.md
+- [ ] T115 [P3] [Phase 17] [Deps: T029] docs/API.md — Endpoint specifications: POST /api/upload request/response schemas, all error codes, example payloads | docs/API.md
+- [ ] T116 [P3] [Phase 17] [Deps: None] docs/ARCHITECTURE.md — Tech stack & design decisions: data flow diagram, service responsibilities, why FastAPI/React/Render, key constraints | docs/ARCHITECTURE.md
+- [ ] T117 [P3] [Phase 17] [Deps: T114] docs/DEVELOPMENT.md — Development workflow & conventions: branching, code style, adding a new validation rule, adding a new component | docs/DEVELOPMENT.md
+- [ ] T118 [P3] [Phase 17] [Deps: T036,T068] docs/TESTING.md — Testing strategy & coverage: backend pytest layout, frontend vitest layout, how to run, coverage targets, adding new tests | docs/TESTING.md
+- [ ] T119 [P3] [Phase 17] [Deps: T069] docs/DEPLOYMENT.md — Render deployment guide: render.yaml walkthrough, first-deploy steps, setting VITE_API_URL, redeploy process | docs/DEPLOYMENT.md
+- [ ] T120 [P3] [Phase 17] [Deps: T119] docs/RENDER-FREE-TIER.md — Free tier constraints & workarounds: cold-start delay, memory limit, ephemeral filesystem, concurrent upload limits, skeleton loader rationale | docs/RENDER-FREE-TIER.md
+- [ ] T121 [P3] [Phase 17] [Deps: None] docs/TROUBLESHOOTING.md — Common issues & FAQ: venv activation errors, CORS issues, XIRR convergence failures, Render cold-start tip, Excel format errors | docs/TROUBLESHOOTING.md
+- [ ] T122 [P3] [Phase 17] [Deps: T116] docs/images/ — Architecture & data flow diagrams (PNG/SVG): system architecture, data flow, component tree | docs/images/
 
 ---
 
@@ -247,16 +274,17 @@
 | Phase 13 — CI/CD Automation | T072–T073 | ⏳ Pending (Post-Launch) |
 | Phase 14 — Gross Purchase Support | T074–T082 | ✅ Complete |
 | Phase 15 — Date Format Migration (DD/MM/YYYY) | T083–T102 | ✅ Complete |
-| Phase 16 — Developer Documentation | T103–T112 | ⏳ Pending (Post-Launch) |
+| Phase 16 — Download Sample Template | T103–T112 | ✅ Complete |
+| Phase 17 — Developer Documentation | T113–T122 | ⏳ Pending (Post-Launch) |
 
 ---
 
 ## Document Metadata
 
 - **Type:** Implementation Task Tracker
-- **Version:** 2.3
+- **Version:** 2.4
 - **Created:** January 15, 2026
-- **Last Updated:** June 7, 2026
-- **Status:** Active (Phases 1–15 complete; Phase 16 Developer Documentation pending)
-- **Coverage:** 112 tasks across 16 phases
+- **Last Updated:** June 8, 2026
+- **Status:** Active (Phases 1–16 complete; Phase 17 Developer Documentation pending)
+- **Coverage:** 122 tasks across 17 phases
 - **Author:** Hari (Product Owner & Tech Lead)
