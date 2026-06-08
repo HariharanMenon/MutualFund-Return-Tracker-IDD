@@ -1,7 +1,7 @@
 # Intent Folder
-**Version:** 4  
-**Revised Date:** June 07, 2026  
-**Revision:** Date format changed from DD-MMM-YYYY to DD/MM/YYYY; updated feature.md to v2.2 and product-structure.md to v2.3
+**Version:** 5  
+**Revised Date:** June 08, 2026  
+**Revision:** Download Sample Template feature added; feature.md updated to v2.3 and product-structure.md updated to v2.4
 
 ## Overview
 The **Intent Folder** (`/intent`) is the centralized documentation hub for the **MutualFund-Return-Tracker-IDD** project. It contains:
@@ -22,24 +22,24 @@ This folder is the **source of truth** during development. Every phase reference
 - **Audience:** All team members (developers, reviewers, stakeholders)
 - **Update frequency:** Low (reflects folder organization, not project changes)
 
-### 2. **mutual-fund-xirr-tracker-feature.md** — Feature Specification (v2.2)
+### 2. **mutual-fund-xirr-tracker-feature.md** — Feature Specification (v2.3)
 - **File location:** `/intent/mutual-fund-xirr-tracker-feature.md`
 - **Shorthand in conversation:** "feature.md"
 - **Purpose:** Complete feature specification for the XIRR tracker application
 - **Scope:** User journeys, UI requirements, API contracts, validation rules, edge cases, testing checklist, decision log
 - **Audience:** Developers (backend & frontend), QA, product owner
 - **Update frequency:** As feature scope evolves (new validations, UI changes, API revisions)
-- **Status:** Completed — Date Format Migration (June 7, 2026 — DD/MM/YYYY format adopted)
+- **Status:** Completed — Download Sample Template Feature (June 8, 2026)
 - **Size:** ~680 lines, 16 major sections
 
-### 3. **product-structure.md** — Architecture & Product Structure (v2.3)
+### 3. **product-structure.md** — Architecture & Product Structure (v2.4)
 - **File location:** `/intent/product-structure.md`
 - **Shorthand in conversation:** "structure.md" or "architecture doc" or "product-structure.md"
 - **Purpose:** Technical architecture, folder layout, deployment strategy, and file organization
 - **Scope:** Directory structure, tech stack rationale, Render free tier optimization, development workflow, scaling path, transaction type constants
 - **Audience:** Developers, DevOps, tech leads
 - **Update frequency:** When folder organization, tech stack, or transaction types change (less frequent than feature doc)
-- **Status:** Completed — Date Format Migration (June 7, 2026 — DD/MM/YYYY format adopted)
+- **Status:** Completed — Download Sample Template Feature (June 8, 2026)
 - **Size:** ~900 lines, comprehensive architecture reference
 
 ---
@@ -108,8 +108,8 @@ A **free, stateless, browser-based tool** that:
 
 | Document | Version | Date | Status | Next Update Trigger |
 |----------|---------|------|--------|---------------------|
-| **feature.md** | 2.2 | June 7, 2026 | Completed — Date Format Migration | New validation rules, UI changes, API revisions |
-| **product-structure.md** | 2.3 | June 7, 2026 | Completed — Date Format Migration | Folder reorganization, tech stack changes, transaction type changes |
+| **feature.md** | 2.3 | June 8, 2026 | Completed — Download Sample Template Feature | New validation rules, UI changes, API revisions |
+| **product-structure.md** | 2.4 | June 8, 2026 | Completed — Download Sample Template Feature | Folder reorganization, tech stack changes, transaction type changes |
 
 ### Version Numbering
 - **Feature Doc:** Major.Minor (2.0, 2.1, 3.0)
@@ -647,8 +647,8 @@ Happy building! 🚀
 
 **Document Metadata**
 - **Type:** Intent Folder Guide
-- **Version:** 4
+- **Version:** 5
 - **Created:** March 19, 2026
 - **Author:** Hari (Product Owner)
-- **Last Updated:** June 7, 2026 (Date format changed from DD-MMM-YYYY to DD/MM/YYYY)
+- **Last Updated:** June 8, 2026 (Download Sample Template feature added; feature.md → v2.3, product-structure.md → v2.4)
 - **Status:** Active (Referenced during all development phases)

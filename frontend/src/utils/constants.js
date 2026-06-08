@@ -18,6 +18,14 @@ export const ACCEPTED_FILE_EXTENSION = '.xlsx';
 export const ACCEPTED_MIME_TYPE =
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
+/** Filename of the sample transaction template served from frontend/public/.
+ *  Used by UploadArea to set the download attribute on the template link. */
+export const TEMPLATE_FILE_NAME = 'MFTransaction_Template.xlsx';
+
+/** URL path of the sample transaction template — served as a Vite static asset.
+ *  Used by UploadArea as the href on the template download link. */
+export const TEMPLATE_DOWNLOAD_URL = '/MFTransaction_Template.xlsx';
+
 /** Column labels used in the transaction grid header row. */
 export const COLUMN_LABELS = {
   date: 'Date',

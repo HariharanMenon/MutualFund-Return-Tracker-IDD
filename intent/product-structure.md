@@ -1,9 +1,9 @@
 # Product Structure: MutualFund-Return-Tracker-IDD
 
-**Version:** 2.3  
+**Version:** 2.4  
 **Date:** March 19, 2026  
-**Last Updated:** June 7, 2026
-**Revision:** Date format changed from DD-MMM-YYYY to DD/MM/YYYY
+**Last Updated:** June 8, 2026
+**Revision:** Added template asset and constants for Download Sample Template feature
 **Context:** Stateless, in-memory file processing on Render free tier (single instance, cold-start delays acceptable)
 ---
 
@@ -162,7 +162,8 @@ MutualFund-Return-Tracker-IDD/
 │   │
 │   ├── public/
 │   │   ├── favicon.ico
-│   │   └── robots.txt
+│   │   ├── robots.txt
+│   │   └── MFTransaction_Template.xlsx        # Static template asset — served at /MFTransaction_Template.xlsx
 │   │
 │   └── dist/                              # Build output (Render deploys this)
 │       └── .gitkeep
@@ -558,6 +559,17 @@ export const uploadFile = async (file) => {
 **`validation.js`** – Frontend Validation
 - `isValidFileSize(file)` → checks ≤ 10 MB
 - `isValidFileType(file)` → checks .xlsx only
+
+**`constants.js`** – Frontend Constants
+- `API_URL` → base URL for all API calls (falls back to same-origin in production)
+- `MAX_FILE_SIZE` → `10 * 1024 * 1024` (10 MB; must match backend)
+- `FILE_SIZE_LIMIT_LABEL` → `'10 MB'` (human-readable, shown in UI)
+- `ACCEPTED_FILE_EXTENSION` → `'.xlsx'`
+- `ACCEPTED_MIME_TYPE` → `'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'`
+- `TEMPLATE_FILE_NAME` → `'MFTransaction_Template.xlsx'` (used as `download` attribute on template link)
+- `TEMPLATE_DOWNLOAD_URL` → `'/MFTransaction_Template.xlsx'` (Vite static asset path; used as `href` on template link)
+- `COLUMN_LABELS` → display labels for the 6 transaction grid columns
+- `APP_NAME` → `'Mutual Fund XIRR Tracker'`
 
 #### **Styles**
 
@@ -1398,12 +1410,12 @@ git push origin main
 ## Versioning & Updates
 
 ### **Intent Document (`intent/mutual-fund-xirr-tracker-feature.md`)**
-- Version 2.2 (current, June 7, 2026 — Date format changed from DD-MMM-YYYY to DD/MM/YYYY)
+- Version 2.3 (current, June 8, 2026 — Download Sample Template feature added to Upload Area)
 - Update when feature scope changes
 - Backward-compatible with existing product structure
 
 ### **Product Structure (`intent/product-structure.md`)**
-- Version 2.3 (current, June 7, 2026 — Date format changed from DD-MMM-YYYY to DD/MM/YYYY)
+- Version 2.4 (current, June 8, 2026 — Added template asset and constants for Download Sample Template feature)
 - Update when folder layout, tech stack, or transaction types change
 - Independent from intent versioning
 
@@ -1489,4 +1501,5 @@ Windows (PowerShell):
 ### Sign-Off
 - **Product Owner:** Hari
 - **Last Updated:** June 7, 2026 (Date format changed from DD-MMM-YYYY to DD/MM/YYYY)
-- **Status:** Completed — Date Format Migration (DD/MM/YYYY)
+- **Last Updated:** June 8, 2026 (Added template asset and constants for Download Sample Template feature)
+- **Status:** Completed — Download Sample Template Feature

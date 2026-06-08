@@ -71,6 +71,13 @@
   text-decoration: underline;
 }
 
+.upload-area__template-link {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .upload-area__hint {
   font-size: var(--font-size-xs);
   color: var(--color-muted);

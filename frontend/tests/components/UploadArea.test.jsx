@@ -18,8 +18,8 @@ describe('UploadArea Component', () => {
       const onFile = vi.fn();
       render(<UploadArea onFile={onFile} />);
 
-      // Check for drag-and-drop area (looking for text that indicates upload capability)
-      expect(screen.getByText(/drag.*drop|upload|select/i)).toBeInTheDocument();
+      // Check for the primary drop zone text specifically
+      expect(screen.getByText(/drag & drop your .xlsx file here/i)).toBeInTheDocument();
     });
 
     it('renders hidden file input', () => {
@@ -243,6 +243,34 @@ describe('UploadArea Component', () => {
       // Should not call onFile for oversized file
       expect(onFile).not.toHaveBeenCalled();
       expect(container.querySelector('.upload-area__error')).toBeInTheDocument();
+    });
+  });
+
+  describe('Download Template Link', () => {
+    it('renders download link with correct href and download attribute when enabled', () => {
+      const onFile = vi.fn();
+      render(<UploadArea onFile={onFile} />);
+
+      const link = screen.getByRole('link', { name: /download sample excel template/i });
+      expect(link).toBeInTheDocument();
+      expect(link).toHaveAttribute('href', '/MFTransaction_Template.xlsx');
+      expect(link).toHaveAttribute('download', 'MFTransaction_Template.xlsx');
+    });
+
+    it('does not render download link when disabled', () => {
+      const onFile = vi.fn();
+      render(<UploadArea onFile={onFile} disabled={true} />);
+
+      const link = screen.queryByRole('link', { name: /download sample excel template/i });
+      expect(link).not.toBeInTheDocument();
+    });
+
+    it('has correct aria-label on the download link', () => {
+      const onFile = vi.fn();
+      render(<UploadArea onFile={onFile} />);
+
+      const link = screen.getByRole('link', { name: /download sample excel template/i });
+      expect(link).toHaveAttribute('aria-label', 'Download sample Excel template');
     });
   });
 

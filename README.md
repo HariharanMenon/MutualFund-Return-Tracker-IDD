@@ -12,6 +12,7 @@ traces directly back to a documented intent.
 ## Features
 
 - Drag-and-drop or file-picker upload of `.xlsx` mutual fund statements
+- **Download sample template** (`MFTransaction_Template.xlsx`) directly from the upload area before uploading
 - Strict data validation with row-level error messages
 - XIRR calculation (excludes Stamp Duty / STT from cash flows)
 - Summary metrics: Total Invested, Final Proceeds, Profit/Loss
@@ -309,8 +310,8 @@ This project is built using **Intent-Driven Development** — a methodology wher
 This project maintains three core intent documents:
 | Document | Purpose | Key Sections |
 |----------|---------|--------------|
-| [`mutual-fund-xirr-tracker-feature.md`](intent/mutual-fund-xirr-tracker-feature.md) (v2.0) | Feature specification | User journeys, API contracts, 15 validation rules, edge cases, testing checklist, decision log |
-| [`product-structure.md`](intent/product-structure.md) (v1.0) | Technical architecture | Folder layout, tech stack rationale, Render free tier optimization, development workflow |
+| [`mutual-fund-xirr-tracker-feature.md`](intent/mutual-fund-xirr-tracker-feature.md) (v2.3) | Feature specification | User journeys, API contracts, 15 validation rules, edge cases, testing checklist, decision log |
+| [`product-structure.md`](intent/product-structure.md) (v2.4) | Technical architecture | Folder layout, tech stack rationale, Render free tier optimization, development workflow |
 | [`Intent_README.md`](intent/Intent_README.md) | Folder guide | How to read and use intent documents across development phases |
 
 ### Benefits
@@ -418,4 +419,4 @@ MIT
 
 ---
 
-*Last updated: June 7, 2026 — Date format changed from DD-MMM-YYYY to DD/MM/YYYY*
+*Last updated: June 8, 2026 — Download Sample Template feature added to Upload Area*
