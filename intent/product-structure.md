@@ -1,9 +1,9 @@
 # Product Structure: MutualFund-Return-Tracker-IDD
 
-**Version:** 2.4  
+**Version:** 2.5  
 **Date:** March 19, 2026  
 **Last Updated:** June 8, 2026
-**Revision:** Added template asset and constants for Download Sample Template feature
+**Revision:** STAMP_DUTY moved from XIRR_EXCLUDED_CATEGORIES to XIRR_OUTFLOW_CATEGORIES
 **Context:** Stateless, in-memory file processing on Render free tier (single instance, cold-start delays acceptable)
 ---
 
@@ -282,15 +282,17 @@ class TransactionCategory(str, Enum):
 **Functional Groupings (Used by Validator & XIRR Calculator)**
 ```python
 # Money outflows in XIRR (negative cash flows)
-XIRR_OUTFLOW_CATEGORIES = {PURCHASE, DIVIDEND_REINVEST}
+# STAMP_DUTY included: represents a real cash cost paid by the investor
+# and must be reflected in the true annualised return calculation
+XIRR_OUTFLOW_CATEGORIES = {PURCHASE, DIVIDEND_REINVEST, STAMP_DUTY}
 
 # Money inflows in XIRR (positive cash flows)
 XIRR_INFLOW_CATEGORIES = {SELL, REDEMPTION}
 
 # Excluded from XIRR cash flows entirely
-XIRR_EXCLUDED_CATEGORIES = {STAMP_DUTY, GROSS_PURCHASE}
 # GROSS_PURCHASE excluded because it is a summary row;
 # the actual cash flows are captured by Net Purchase + Stamp Duty
+XIRR_EXCLUDED_CATEGORIES = {GROSS_PURCHASE}
 
 # Categories included in Total Invested summary metric
 TOTAL_INVESTED_CATEGORIES = {PURCHASE, STAMP_DUTY}
@@ -1502,4 +1504,5 @@ Windows (PowerShell):
 - **Product Owner:** Hari
 - **Last Updated:** June 7, 2026 (Date format changed from DD-MMM-YYYY to DD/MM/YYYY)
 - **Last Updated:** June 8, 2026 (Added template asset and constants for Download Sample Template feature)
-- **Status:** Completed — Download Sample Template Feature
+- **Last Updated:** June 8, 2026 (STAMP_DUTY moved from XIRR_EXCLUDED_CATEGORIES to XIRR_OUTFLOW_CATEGORIES)
+- **Status:** Completed — Stamp Duty / STT Paid XIRR Inclusion

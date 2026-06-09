@@ -17,9 +17,11 @@ Algorithm: Newton-Raphson with multiple starting guesses — matches
 Excel's XIRR behaviour.  No external dependency required.
 
 Cash-flow sign convention (spec §7):
-  PURCHASE / DIVIDEND_REINVEST  →  negative  (money leaves investor)
-  SELL / REDEMPTION             →  positive  (money enters investor)
-  STAMP_DUTY                    →  excluded  (not a cash-flow for returns)
+  PURCHASE / DIVIDEND_REINVEST / STAMP_DUTY  →  negative  (money leaves investor)
+  SELL / REDEMPTION                          →  positive  (money enters investor)
+  GROSS_PURCHASE                             →  excluded  (summary row — actual
+                                                cash flows captured by Net Purchase
+                                                + Stamp Duty rows)
 
 Summary Metrics (spec §7):
   Total Invested  = Σ amount  for  PURCHASE + STAMP_DUTY rows
@@ -180,7 +182,9 @@ def calculate(validated_rows: list[dict]) -> tuple[float, SummaryMetrics]:
             # Track last SELL/REDEMPTION; spec requires the file ends with one
             final_proceeds = amount
 
-        # --- XIRR cash flows (STAMP_DUTY excluded entirely) ---
+        # --- XIRR cash flows ---
+        # GROSS_PURCHASE is excluded (summary row — double-counted if included).
+        # STAMP_DUTY is included as an outflow via XIRR_OUTFLOW_CATEGORIES.
         if category in XIRR_EXCLUDED_CATEGORIES:
             continue
         if category in XIRR_OUTFLOW_CATEGORIES:

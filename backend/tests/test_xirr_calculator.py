@@ -1,8 +1,9 @@
 """
 test_xirr_calculator.py — Unit tests for XIRR calculation and summary metrics.
 
-Tests: XIRR accuracy for a known dataset, Stamp Duty exclusion, DIVIDEND_REINVEST
-treatment, summary metric values, and convergence failure handling.
+Tests: XIRR accuracy for a known dataset, Stamp Duty inclusion as outflow,
+DIVIDEND_REINVEST treatment, summary metric values, convergence failure handling,
+and XIRR_OUTFLOW_CATEGORIES membership assertion.
 """
 
 from datetime import date
@@ -12,6 +13,7 @@ import pytest
 from app.exceptions.calculation_error import XirrCalculationError
 from app.services.validator import validate
 from app.services.xirr_calculator import _compute_xirr, calculate
+from app.utils.constants import TransactionCategory, XIRR_OUTFLOW_CATEGORIES
 from tests.fixtures import test_data as td
 
 
@@ -32,11 +34,24 @@ def test_xirr_basic_accuracy():
     assert xirr == pytest.approx(14.96, abs=0.2)
 
 
-def test_xirr_stamp_duty_excluded():
-    """Adding a Stamp Duty row must not change the XIRR (excluded from cash flows)."""
-    xirr_without_sd, _ = calculate(validate(td.valid_two_row()))
+def test_xirr_stamp_duty_included_as_outflow():
+    """Stamp Duty is a negative cash outflow in XIRR — lowers return vs no-stamp-duty case.
+
+    Fixture: Purchase 10000 + Stamp Duty 50 on 01/01/2020, SELL 11500 on 01/01/2021.
+    Cash flows: [-10000, -50, 11500]
+    Expected XIRR ≈ 14.39% (lower than 14.96% without stamp duty — more cash out,
+    same proceeds, confirming stamp duty is counted as a real cost outflow).
+    """
     xirr_with_sd, _ = calculate(validate(td.valid_with_stamp_duty()))
-    assert xirr_with_sd == pytest.approx(xirr_without_sd, abs=0.01)
+    xirr_without_sd, _ = calculate(validate(td.valid_two_row()))
+    # Stamp duty included as outflow means XIRR is lower than the no-stamp-duty case
+    assert xirr_with_sd < xirr_without_sd
+    assert xirr_with_sd == pytest.approx(14.39, abs=0.05)
+
+
+def test_stamp_duty_is_member_of_xirr_outflow_categories():
+    """STAMP_DUTY must be in XIRR_OUTFLOW_CATEGORIES (constants.py spec)."""
+    assert TransactionCategory.STAMP_DUTY in XIRR_OUTFLOW_CATEGORIES
 
 
 def test_xirr_dividend_reinvest_treated_as_outflow():

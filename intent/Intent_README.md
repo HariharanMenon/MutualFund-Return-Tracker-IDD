@@ -1,7 +1,7 @@
 # Intent Folder
-**Version:** 5  
+**Version:** 6  
 **Revised Date:** June 08, 2026  
-**Revision:** Download Sample Template feature added; feature.md updated to v2.3 and product-structure.md updated to v2.4
+**Revision:** Stamp Duty / STT Paid XIRR inclusion; feature.md updated to v2.4 and product-structure.md updated to v2.5
 
 ## Overview
 The **Intent Folder** (`/intent`) is the centralized documentation hub for the **MutualFund-Return-Tracker-IDD** project. It contains:
@@ -17,7 +17,7 @@ This folder is the **source of truth** during development. Every phase reference
 ## Contents
 
 ### 1. **README.md** (This File)
-- **File location:** `/intent/README.md`
+- **File location:** `/intent/Intent_README.md`
 - **Purpose:** Guide to the intent folder structure, versioning, and update process
 - **Audience:** All team members (developers, reviewers, stakeholders)
 - **Update frequency:** Low (reflects folder organization, not project changes)
@@ -108,8 +108,8 @@ A **free, stateless, browser-based tool** that:
 
 | Document | Version | Date | Status | Next Update Trigger |
 |----------|---------|------|--------|---------------------|
-| **feature.md** | 2.3 | June 8, 2026 | Completed — Download Sample Template Feature | New validation rules, UI changes, API revisions |
-| **product-structure.md** | 2.4 | June 8, 2026 | Completed — Download Sample Template Feature | Folder reorganization, tech stack changes, transaction type changes |
+| **feature.md** | 2.4 | June 8, 2026 | Completed — Stamp Duty / STT Paid XIRR Inclusion | New validation rules, UI changes, API revisions |
+| **product-structure.md** | 2.5 | June 8, 2026 | Completed — Stamp Duty / STT Paid XIRR Inclusion | Folder reorganization, tech stack changes, transaction type changes |
 
 ### Version Numbering
 - **Feature Doc:** Major.Minor (2.0, 2.1, 3.0)
@@ -164,8 +164,8 @@ A **free, stateless, browser-based tool** that:
 - **Transaction Limit:** 10,000 rows max (safe for Render 512 MB memory)
 - **File Transactions:** Minimum 2 (1 buy + 1 redemption)
 - **Final Transaction:** Must be SELL/REDEMPTION with Unit Balance = 0
-- **XIRR Calculation:** Excludes Stamp Duty/STT Paid and Gross Purchase from return calculation
-- **Gross Purchase:** Summary row (e.g., from MFUTILITY) representing gross transaction amount before splitting into Net Purchase + Stamp Duty; excluded from XIRR and Total Invested
+- **XIRR Calculation:** Includes Stamp Duty / STT Paid as negative outflows; excludes Gross Purchase only
+- **Gross Purchase:** Summary row (e.g., from MFUTILITY) representing gross transaction amount before splitting into Net Purchase + Stamp Duty; excluded from both XIRR and Total Invested
 
 ### Success Metrics
 - XIRR calculation < 5 seconds (excluding cold-start)
@@ -647,8 +647,9 @@ Happy building! 🚀
 
 **Document Metadata**
 - **Type:** Intent Folder Guide
-- **Version:** 5
+- **Version:** 6
 - **Created:** March 19, 2026
 - **Author:** Hari (Product Owner)
 - **Last Updated:** June 8, 2026 (Download Sample Template feature added; feature.md → v2.3, product-structure.md → v2.4)
+- **Last Updated:** June 8, 2026 (Stamp Duty / STT Paid XIRR inclusion; feature.md → v2.4, product-structure.md → v2.5)
 - **Status:** Active (Referenced during all development phases)

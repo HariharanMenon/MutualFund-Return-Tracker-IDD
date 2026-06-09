@@ -240,18 +240,40 @@
 
 - [x] T112 [P3] [Phase 16] [Deps: T103,T104,T105,T106,T107,T108,T109,T110,T111] Update `tasks.md` to reflect Phase 16 completion: increment version `2.3 → 2.4`; update last-updated date; update status line to "Active (Phases 1–16 complete; Phase 17 Developer Documentation pending)"; update coverage count to 122 tasks across 17 phases; update Summary table — mark Phase 16 row (T103–T112, ✅ Complete) and Phase 17 as ⏳ Pending | tasks.md
 
-## Phase 17 — Developer Documentation (`/docs`)
+## Phase 17 — Stamp Duty / STT Paid: Include in XIRR Cash Flows (Amendment)
 
-- [ ] T113 [P3] [Phase 17] [Deps: None] docs/README.md — Documentation index: overview of all docs, when to read each, links | docs/README.md
-- [ ] T114 [P3] [Phase 17] [Deps: T070] docs/SETUP.md — Installation & environment setup: prerequisites, .venv creation, backend + frontend setup, running locally | docs/SETUP.md
-- [ ] T115 [P3] [Phase 17] [Deps: T029] docs/API.md — Endpoint specifications: POST /api/upload request/response schemas, all error codes, example payloads | docs/API.md
-- [ ] T116 [P3] [Phase 17] [Deps: None] docs/ARCHITECTURE.md — Tech stack & design decisions: data flow diagram, service responsibilities, why FastAPI/React/Render, key constraints | docs/ARCHITECTURE.md
-- [ ] T117 [P3] [Phase 17] [Deps: T114] docs/DEVELOPMENT.md — Development workflow & conventions: branching, code style, adding a new validation rule, adding a new component | docs/DEVELOPMENT.md
-- [ ] T118 [P3] [Phase 17] [Deps: T036,T068] docs/TESTING.md — Testing strategy & coverage: backend pytest layout, frontend vitest layout, how to run, coverage targets, adding new tests | docs/TESTING.md
-- [ ] T119 [P3] [Phase 17] [Deps: T069] docs/DEPLOYMENT.md — Render deployment guide: render.yaml walkthrough, first-deploy steps, setting VITE_API_URL, redeploy process | docs/DEPLOYMENT.md
-- [ ] T120 [P3] [Phase 17] [Deps: T119] docs/RENDER-FREE-TIER.md — Free tier constraints & workarounds: cold-start delay, memory limit, ephemeral filesystem, concurrent upload limits, skeleton loader rationale | docs/RENDER-FREE-TIER.md
-- [ ] T121 [P3] [Phase 17] [Deps: None] docs/TROUBLESHOOTING.md — Common issues & FAQ: venv activation errors, CORS issues, XIRR convergence failures, Render cold-start tip, Excel format errors | docs/TROUBLESHOOTING.md
-- [ ] T122 [P3] [Phase 17] [Deps: T116] docs/images/ — Architecture & data flow diagrams (PNG/SVG): system architecture, data flow, component tree | docs/images/
+> **Context:** Stamp Duty / STT Paid transactions currently contribute to Total Invested but are excluded from XIRR cash flows (treated as no-ops in the return calculation). This amendment includes them as negative cash outflows in XIRR, representing the true cost of investment. The change touches backend constants, the XIRR calculator service, backend tests, all three intent documents, README.md, and finally tasks.md.
+
+- [x] T113 [P3] [Phase 17] [Deps: None] Update `mutual-fund-xirr-tracker-feature.md`: in Section 5 (Successful Processing) update the Total Invested bullet to clarify Stamp Duty/STT is now included in XIRR cash flows; in Section 12 (Decision Log) update the "Stamp Duty/STT ignored in XIRR" row — change decision to "included as outflow" and update rationale; update version `2.3 → 2.4`, add revision note "Stamp Duty / STT Paid included in XIRR cash flows as outflows", add new Revised line to Sign-Off for June 8, 2026 | intent/mutual-fund-xirr-tracker-feature.md
+
+- [x] T114 [P3] [Phase 17] [Deps: T113] Update `product-structure.md`: in the Backend Constants section move STAMP_DUTY from `XIRR_EXCLUDED_CATEGORIES` into `XIRR_OUTFLOW_CATEGORIES` so that set reads `{PURCHASE, DIVIDEND_REINVEST, STAMP_DUTY}`; update `XIRR_EXCLUDED_CATEGORIES` to `{GROSS_PURCHASE}` only; update explanatory comments on both sets; confirm `TOTAL_INVESTED_CATEGORIES` is unchanged (`{PURCHASE, STAMP_DUTY}`); update version `2.4 → 2.5`, add revision note "STAMP_DUTY moved from XIRR_EXCLUDED_CATEGORIES to XIRR_OUTFLOW_CATEGORIES" | intent/product-structure.md
+
+- [x] T115 [P3] [Phase 17] [Deps: T113,T114] Update `Intent_README.md`: in Document Versioning table update `feature.md` to v2.4 with status "Completed — Stamp Duty/STT XIRR inclusion"; update `product-structure.md` to v2.5 with matching status; in Key Constraints section update the XIRR constraint bullet to reflect only Gross Purchase is now excluded from XIRR (Stamp Duty/STT is now included as an outflow); update Intent README version `5 → 6`, revision note "feature.md → v2.4, product-structure.md → v2.5 for Stamp Duty/STT XIRR inclusion phase"; update Last Updated date and Document Metadata | intent/Intent_README.md
+
+- [x] T116 [P1] [Phase 17] [Deps: T114] Update `constants.py`: move `STAMP_DUTY` from `XIRR_EXCLUDED_CATEGORIES` into `XIRR_OUTFLOW_CATEGORIES` — `XIRR_OUTFLOW_CATEGORIES` becomes `{PURCHASE, DIVIDEND_REINVEST, STAMP_DUTY}`; `XIRR_EXCLUDED_CATEGORIES` becomes `{GROSS_PURCHASE}` only; update all inline comments on both sets to reflect the new semantics | backend/app/utils/constants.py
+
+- [x] T117 [P1] [Phase 17] [Deps: T116,T026] Update `xirr_calculator.py`: verify cash flow builder loop uses `XIRR_OUTFLOW_CATEGORIES` and `XIRR_EXCLUDED_CATEGORIES` from constants (no hardcoded category checks); update any inline comment that previously described Stamp Duty as excluded or skipped; no logic change expected if the loop already dispatches via the constant sets — confirm and document | backend/app/services/xirr_calculator.py
+
+- [x] T118 [P1] [Phase 17] [Deps: T116,T117,T034] Update `test_xirr_calculator.py`: rename / reframe the "Stamp Duty exclusion" test to "Stamp Duty included as outflow"; update the test so that a Stamp Duty row generates a negative cash flow in the XIRR input list (assert it is present, not absent); recalculate any hardcoded expected XIRR values in fixtures that contain Stamp Duty rows (previously ignored, now counted as outflow); add assertion that `STAMP_DUTY` is a member of `XIRR_OUTFLOW_CATEGORIES` | backend/tests/test_xirr_calculator.py
+
+- [x] T119 [P3] [Phase 17] [Deps: T113,T114,T115,T116,T117,T118] Update `README.md`: in the Features list update the bullet "XIRR calculation (excludes Stamp Duty / STT from cash flows)" to "XIRR calculation (includes Stamp Duty / STT as a cost outflow in cash flows; excludes Gross Purchase)"; in the constraints table update the "Stamp Duty / STT" row from "Included in Total Invested; excluded from XIRR" to "Included in Total Invested and XIRR cash flows (as outflow)"; update last-updated date and note | README.md
+
+- [x] T120 [P3] [Phase 17] [Deps: T113,T114,T115,T116,T117,T118,T119] Update `tasks.md`: increment version `2.4 → 2.5`; update last-updated date; update Status line to "Active (Phases 1–17 complete; Phase 18 Developer Documentation pending)"; update coverage count to 130 tasks across 18 phases; mark Phase 17 row as ✅ Complete in Summary table | tasks.md
+
+---
+
+## Phase 18 — Developer Documentation (`/docs`)
+
+- [ ] T121 [P3] [Phase 18] [Deps: None] docs/README.md — Documentation index: overview of all docs, when to read each, links | docs/README.md
+- [ ] T122 [P3] [Phase 18] [Deps: T070] docs/SETUP.md — Installation & environment setup: prerequisites, .venv creation, backend + frontend setup, running locally | docs/SETUP.md
+- [ ] T123 [P3] [Phase 18] [Deps: T029] docs/API.md — Endpoint specifications: POST /api/upload request/response schemas, all error codes, example payloads | docs/API.md
+- [ ] T124 [P3] [Phase 18] [Deps: None] docs/ARCHITECTURE.md — Tech stack & design decisions: data flow diagram, service responsibilities, why FastAPI/React/Render, key constraints | docs/ARCHITECTURE.md
+- [ ] T125 [P3] [Phase 18] [Deps: T122] docs/DEVELOPMENT.md — Development workflow & conventions: branching, code style, adding a new validation rule, adding a new component | docs/DEVELOPMENT.md
+- [ ] T126 [P3] [Phase 18] [Deps: T036,T068] docs/TESTING.md — Testing strategy & coverage: backend pytest layout, frontend vitest layout, how to run, coverage targets, adding new tests | docs/TESTING.md
+- [ ] T127 [P3] [Phase 18] [Deps: T069] docs/DEPLOYMENT.md — Render deployment guide: render.yaml walkthrough, first-deploy steps, setting VITE_API_URL, redeploy process | docs/DEPLOYMENT.md
+- [ ] T128 [P3] [Phase 18] [Deps: T127] docs/RENDER-FREE-TIER.md — Free tier constraints & workarounds: cold-start delay, memory limit, ephemeral filesystem, concurrent upload limits, skeleton loader rationale | docs/RENDER-FREE-TIER.md
+- [ ] T129 [P3] [Phase 18] [Deps: None] docs/TROUBLESHOOTING.md — Common issues & FAQ: venv activation errors, CORS issues, XIRR convergence failures, Render cold-start tip, Excel format errors | docs/TROUBLESHOOTING.md
+- [ ] T130 [P3] [Phase 18] [Deps: T124] docs/images/ — Architecture & data flow diagrams (PNG/SVG): system architecture, data flow, component tree | docs/images/
 
 ---
 
@@ -275,16 +297,17 @@
 | Phase 14 — Gross Purchase Support | T074–T082 | ✅ Complete |
 | Phase 15 — Date Format Migration (DD/MM/YYYY) | T083–T102 | ✅ Complete |
 | Phase 16 — Download Sample Template | T103–T112 | ✅ Complete |
-| Phase 17 — Developer Documentation | T113–T122 | ⏳ Pending (Post-Launch) |
+| Phase 17 — Stamp Duty / STT Paid XIRR Inclusion | T113–T120 | ✅ Complete |
+| Phase 18 — Developer Documentation | T121–T130 | ⏳ Pending (Post-Launch) |
 
 ---
 
 ## Document Metadata
 
 - **Type:** Implementation Task Tracker
-- **Version:** 2.4
+- **Version:** 2.5
 - **Created:** January 15, 2026
 - **Last Updated:** June 8, 2026
-- **Status:** Active (Phases 1–16 complete; Phase 17 Developer Documentation pending)
-- **Coverage:** 122 tasks across 17 phases
+- **Status:** Active (Phases 1–17 complete; Phase 18 Developer Documentation pending)
+- **Coverage:** 130 tasks across 18 phases
 - **Author:** Hari (Product Owner & Tech Lead)
