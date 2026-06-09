@@ -14,7 +14,7 @@ traces directly back to a documented intent.
 - Drag-and-drop or file-picker upload of `.xlsx` mutual fund statements
 - **Download sample template** (`MFTransaction_Template.xlsx`) directly from the upload area before uploading
 - Strict data validation with row-level error messages
-- XIRR calculation (excludes Stamp Duty / STT from cash flows)
+- XIRR calculation (includes Stamp Duty / STT as a cost outflow in cash flows; excludes Gross Purchase)
 - Summary metrics: Total Invested, Final Proceeds, Profit/Loss
 - 6-column transaction grid displayed in file order
 - Skeleton loader for cold-start UX (Render free tier)
@@ -216,7 +216,7 @@ User Browser
 | Date format         | DD/MM/YYYY only (e.g., 18/12/2024)               |
 | Date range          | 01/01/1960 → today                               |
 | Final transaction   | Must be SELL/REDEMPTION with Unit Balance = 0    |
-| Stamp Duty / STT    | Included in Total Invested; excluded from XIRR   |
+| Stamp Duty / STT    | Included in Total Invested and XIRR cash flows (as outflow) |
 | Worksheets          | First sheet only; extras are ignored             |
 | Persistence         | None — fully in-memory, stateless                |
 
@@ -419,4 +419,4 @@ MIT
 
 ---
 
-*Last updated: June 8, 2026 — Download Sample Template feature added to Upload Area*
+*Last updated: June 8, 2026 — Stamp Duty / STT Paid included in XIRR cash flows as outflows*

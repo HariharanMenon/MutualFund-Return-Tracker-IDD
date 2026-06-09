@@ -1,9 +1,9 @@
 # Intent: Mutual Fund XIRR Return Tracker
 
 **Date:** March 18, 2026  
-**Status:** Completed — Download Sample Template Feature  
+**Status:** Completed — Stamp Duty / STT Paid XIRR Inclusion  
 **Priority:** MVP (Minimum Viable Product)  
-**Revision:** 2.3 – Download Sample Template feature added to Upload Area
+**Revision:** 2.4 – Stamp Duty / STT Paid included in XIRR cash flows as outflows
 
 ---
 
@@ -106,6 +106,7 @@ Return to user: **Specific error message** (e.g., "Row 5: Date column contains i
    - **Total Invested:** Sum of all PURCHASE/BUY/SIP/Systematic Investment/Stamp Duty/STT Paid transactions (Gross Purchase **excluded** — it is a summary row; the actual investment is captured by accompanying Net Purchase and Stamp Duty rows)
    - **Final Proceeds:** Amount from final SELL/REDEMPTION transaction
    - **Profit/Loss:** Final Proceeds – Total Invested (formatted as currency, green if positive, red if negative)
+   - **Note:** Stamp Duty / STT Paid transactions are included in **both** Total Invested and XIRR cash flows (as negative outflows), reflecting the true cost of investment. Gross Purchase remains excluded from both.
 
 ---
 
@@ -551,7 +552,7 @@ class UploadResponse(BaseModel):
 | **Case-insensitive headers** | Handles diverse fund statement formats | Requires normalization logic |
 | **DD/MM/YYYY only** | Standardizes input; aligns with Indian tabular Excel fund statement exports | Rejects other formats including DD-MMM-YYYY; can be extended in future version |
 | **Mandatory summary metrics** | Provides financial context for XIRR; improves UX | Slightly more backend processing |
-| **Stamp Duty/STT ignored in XIRR** | Stamp Duty/STT are one-time costs, not ongoing returns | May slightly understate true cost; acceptable for MVP |
+| **Stamp Duty/STT included in XIRR as outflow** | Stamp Duty/STT represent a real cash cost paid by the investor and should be reflected in the true annualised return; including them as negative outflows produces a more accurate XIRR | Slightly lowers the reported XIRR vs the previous approach, but more accurately reflects real investment cost |
 | **Gross Purchase excluded from XIRR and Total Invested** | Gross Purchase is a summary row; the actual cash flows are captured by Net Purchase + Stamp Duty in the same transaction group. Including it would double-count the invested amount. | Real-world fund statements (e.g., MFUTILITY) always split gross amount into Net Purchase + Stamp Duty rows, so exclusion is semantically correct. |
 
 ---
@@ -676,4 +677,5 @@ Render Free Instance
 - **Prepared:** March 18, 2026  
 - **Revised:** June 7, 2026 (Date format changed from DD-MMM-YYYY to DD/MM/YYYY)
 - **Revised:** June 8, 2026 (Download Sample Template feature added to Upload Area)
-- **Status:** Completed — Download Sample Template Feature
+- **Revised:** June 8, 2026 (Stamp Duty / STT Paid included in XIRR cash flows as outflows)
+- **Status:** Completed — Stamp Duty / STT Paid XIRR Inclusion

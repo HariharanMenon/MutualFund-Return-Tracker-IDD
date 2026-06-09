@@ -154,9 +154,12 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
 # ============================================================
 
 # Categories that produce a NEGATIVE cash flow for XIRR (money out)
+# STAMP_DUTY included: it is a real cash cost paid by the investor at the
+# point of purchase and must be reflected in the true annualised return.
 XIRR_OUTFLOW_CATEGORIES: frozenset[TransactionCategory] = frozenset({
     TransactionCategory.PURCHASE,
     TransactionCategory.DIVIDEND_REINVEST,
+    TransactionCategory.STAMP_DUTY,
 })
 
 # Categories that produce a POSITIVE cash flow for XIRR (money in)
@@ -169,8 +172,9 @@ XIRR_INFLOW_CATEGORIES: frozenset[TransactionCategory] = frozenset({
 # GROSS_PURCHASE is excluded because it is a summary row — the actual cash
 # outflow is already captured by the accompanying Net Purchase (PURCHASE) row.
 # Including it would double-count the invested amount in XIRR calculations.
+# NOTE: STAMP_DUTY is NOT excluded — it is included in XIRR_OUTFLOW_CATEGORIES
+# as a real cost outflow that affects the true annualised return.
 XIRR_EXCLUDED_CATEGORIES: frozenset[TransactionCategory] = frozenset({
-    TransactionCategory.STAMP_DUTY,
     TransactionCategory.GROSS_PURCHASE,
 })
 
