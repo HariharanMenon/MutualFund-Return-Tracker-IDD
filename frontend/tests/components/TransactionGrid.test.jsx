@@ -1,5 +1,7 @@
 // TransactionGrid.test.jsx — Component tests for TransactionGrid.
-// Tests: 6-column table, file order, null display, row striping.
+// Tests: 6-column table, file order, null display ("—"), row striping,
+// SELL/REDEMPTION Price and Unit Balance optional display (value or "—"),
+// STT Paid row rendering.
 
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -281,6 +283,111 @@ describe('TransactionGrid Component', () => {
       render(<TransactionGrid transactions={[dividendTransaction]} />);
 
       expect(screen.getByText('DIVIDEND REINVEST')).toBeInTheDocument();
+    });
+
+    it('displays STT Paid transactions correctly', () => {
+      // STT Paid is a new category: Units/Price/UB are null; only Amount is present.
+      const sttPaidTransaction = {
+        date: '01/01/2021',
+        transactionType: 'STT Paid',
+        amount: 10,
+        units: null,
+        price: null,
+        unitBalance: null,
+      };
+
+      render(<TransactionGrid transactions={[sttPaidTransaction]} />);
+
+      expect(screen.getByText('STT Paid')).toBeInTheDocument();
+      expect(screen.getByText(/₹10\.00/)).toBeInTheDocument();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // SELL/REDEMPTION — Price and Unit Balance optional display
+  // Price and Unit Balance on SELL/REDEMPTION rows are now optional.
+  // When present, the cell() helper formats and displays them.
+  // When null/undefined, cell() displays "—". No component logic change needed.
+  // ---------------------------------------------------------------------------
+
+  describe('SELL/REDEMPTION Price and Unit Balance Display', () => {
+    it('displays Price and Unit Balance when populated on a SELL row', () => {
+      // Simulates a fund statement that includes Price and Unit Balance on SELL.
+      // Previously these fields were required to be empty (rejected by validator).
+      // They are now optional — if present, they must be displayed.
+      const sellWithAllFields = {
+        date: '01/01/2021',
+        transactionType: 'SELL',
+        amount: 11500,
+        units: 100.0,
+        price: 115.0,
+        unitBalance: 0.0,
+      };
+
+      const { container } = render(<TransactionGrid transactions={[sellWithAllFields]} />);
+
+      // Price column: ₹115.00
+      expect(screen.getByText(/₹115\.00/)).toBeInTheDocument();
+      // Unit Balance column: 0.000 (formatUnits with 3dp)
+      const cells = container.querySelectorAll('tbody td');
+      // cells[4] = Price, cells[5] = Unit Balance
+      expect(cells[4].textContent).toMatch(/115/);
+      expect(cells[5].textContent).toMatch(/0\.000/);
+    });
+
+    it('displays "—" for Price and Unit Balance when absent on a SELL row', () => {
+      // The common case: fund statement omits Price and Unit Balance on SELL.
+      const sellWithoutPriceUB = {
+        date: '01/01/2021',
+        transactionType: 'SELL',
+        amount: 11500,
+        units: 100.0,
+        price: null,
+        unitBalance: null,
+      };
+
+      const { container } = render(<TransactionGrid transactions={[sellWithoutPriceUB]} />);
+
+      const cells = container.querySelectorAll('tbody td');
+      // cells[4] = Price, cells[5] = Unit Balance
+      expect(cells[4].textContent).toBe('—');
+      expect(cells[5].textContent).toBe('—');
+    });
+
+    it('displays Price and Unit Balance when populated on a REDEMPTION row', () => {
+      const redemptionWithAllFields = {
+        date: '15/03/2021',
+        transactionType: 'REDEMPTION',
+        amount: 15000,
+        units: 150.579,
+        price: 99.61,
+        unitBalance: 0.0,
+      };
+
+      const { container } = render(<TransactionGrid transactions={[redemptionWithAllFields]} />);
+
+      const cells = container.querySelectorAll('tbody td');
+      expect(cells[4].textContent).toMatch(/99\.61/);
+      expect(cells[5].textContent).toMatch(/0\.000/);
+    });
+
+    it('displays "—" for Price and Unit Balance when absent on a REDEMPTION row', () => {
+      // The existing mockTransactions[2] is a REDEMPTION with all nulls —
+      // this is the pattern from fund statements that omit these fields.
+      const redemptionWithoutPriceUB = {
+        date: '15/03/2021',
+        transactionType: 'REDEMPTION',
+        amount: 15000,
+        units: null,
+        price: null,
+        unitBalance: null,
+      };
+
+      const { container } = render(<TransactionGrid transactions={[redemptionWithoutPriceUB]} />);
+
+      const cells = container.querySelectorAll('tbody td');
+      expect(cells[4].textContent).toBe('—');
+      expect(cells[5].textContent).toBe('—');
     });
   });
 });

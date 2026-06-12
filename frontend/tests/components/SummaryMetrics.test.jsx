@@ -1,5 +1,7 @@
 // SummaryMetrics.test.jsx — Component tests for SummaryMetrics.
-// Tests: three metrics display, currency formatting, profit/loss coloring.
+// Tests: three metrics display, currency formatting, profit/loss coloring,
+// multi-redemption Final Proceeds (component agnostic to redemption count),
+// and STT Paid net proceeds display.
 
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -81,6 +83,62 @@ describe('SummaryMetrics Component', () => {
       render(<SummaryMetrics metrics={mockNegativeMetrics} />);
 
       expect(screen.getByText(/₹11,00,000\.00/)).toBeInTheDocument();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Multi-redemption Final Proceeds
+  // The component receives finalProceeds as a pre-computed number from the
+  // backend. Whether it is the result of one redemption or several partial ones
+  // (summed and net of STT Paid) is transparent to the component — it simply
+  // formats and displays whatever value arrives in the prop.
+  // ---------------------------------------------------------------------------
+
+  describe('Multi-Redemption Final Proceeds', () => {
+    it('displays summed partial redemptions correctly', () => {
+      // Simulates backend returning Final Proceeds = 6000 + 4900 = 10900
+      // (two partial SELL rows from valid_with_partial_redemptions fixture)
+      const multiRedemptionMetrics = {
+        totalInvested: 10000,
+        finalProceeds: 10900,
+        profitLoss: 900,
+      };
+
+      render(<SummaryMetrics metrics={multiRedemptionMetrics} />);
+
+      expect(screen.getByText(/₹10,900\.00/)).toBeInTheDocument();
+    });
+
+    it('displays final proceeds net of STT Paid correctly', () => {
+      // Simulates backend returning Final Proceeds = 11500 - 10 (STT) = 11490
+      // (from valid_with_stt_paid fixture)
+      const sttNetMetrics = {
+        totalInvested: 10000,
+        finalProceeds: 11490,
+        profitLoss: 1490,
+      };
+
+      render(<SummaryMetrics metrics={sttNetMetrics} />);
+
+      expect(screen.getByText(/₹11,490\.00/)).toBeInTheDocument();
+    });
+
+    it('prop contract is unchanged — component is agnostic to redemption count', () => {
+      // Confirms the component accepts the same {totalInvested, finalProceeds,
+      // profitLoss} shape regardless of how many rows contributed to the values
+      const multiRedemptionMetrics = {
+        totalInvested: 10000,
+        finalProceeds: 10900,
+        profitLoss: 900,
+      };
+
+      const { container } = render(<SummaryMetrics metrics={multiRedemptionMetrics} />);
+
+      const metricValues = container.querySelectorAll('.metric-card__value');
+      expect(metricValues.length).toBe(3);
+      expect(metricValues[0]).toHaveTextContent(/₹10,000\.00/);   // Total Invested
+      expect(metricValues[1]).toHaveTextContent(/₹10,900\.00/);   // Final Proceeds (summed)
+      expect(metricValues[2]).toHaveTextContent(/₹900\.00/);      // Profit/Loss
     });
   });
 

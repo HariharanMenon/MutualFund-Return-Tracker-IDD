@@ -15,6 +15,16 @@ function cell(value, formatter) {
  *
  * Props:
  *   transactions {Array}  Array of transaction objects from backend
+ *
+ * Cell rendering (via cell() helper):
+ *   - null or undefined values → "—" (em-dash sentinel)
+ *   - Present values → formatted via the supplied formatter function
+ *
+ * SELL/REDEMPTION Price and Unit Balance:
+ *   These fields are optional — populated when the fund statement includes
+ *   them, null when not. The cell() helper handles both cases transparently:
+ *   no conditional logic per transaction type is required or present.
+ *   A SELL row with price: 115.0 renders "₹115.00"; price: null renders "—".
  */
 export default function TransactionGrid({ transactions }) {
   const transactionList = transactions || [];

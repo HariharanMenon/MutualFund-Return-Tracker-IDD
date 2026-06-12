@@ -38,3 +38,6 @@ export const COLUMN_LABELS = {
 
 /** Application display name. */
 export const APP_NAME = 'Mutual Fund XIRR Tracker';
+
+/** Privacy disclaimer text shown in the upload area. */
+export const PRIVACY_DISCLAIMER_TEXT = '🔒 Privacy-safe: Your data is private. Your uploaded file is processed entirely in-memory and discarded immediately after results are returned. No data is stored anywhere.';

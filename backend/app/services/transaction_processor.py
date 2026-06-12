@@ -9,6 +9,16 @@ Responsibilities:
     Price        → preserved as entered (2–4 decimals, not modified)
 - Preserve the original transaction type string (not the canonical category)
 - Return list[Transaction] in original file order (no sorting — spec §4.4)
+
+Upstream normalisation contract (guaranteed by validator.validate()):
+- Transaction category (including STT_PAID) is already resolved from its
+  variant strings by transaction_normalizer.get_category() inside the
+  validator. No category mapping is performed here.
+- SELL/REDEMPTION Amount values are already sign-stripped (abs applied) in
+  the validator — this processor always receives a positive float for amount.
+- SELL/REDEMPTION Units values are already sign-stripped (abs applied) in
+  the validator — this processor always receives a positive float for units.
+  Negative signs in the original Excel are silently stripped upstream.
 """
 
 from app.models.transaction import Transaction
@@ -25,7 +35,9 @@ def process(validated_rows: list[dict]) -> list[Transaction]:
     ----------
     validated_rows:
         Output of ``validator.validate()`` — list of typed, validated row
-        dicts (see validator docstring for dict schema).
+        dicts (see validator docstring for dict schema).  All values are
+        already normalised:  category resolved (including ``STT_PAID``),
+        SELL/REDEMPTION amount and units are positive floats (sign stripped).
 
     Returns
     -------

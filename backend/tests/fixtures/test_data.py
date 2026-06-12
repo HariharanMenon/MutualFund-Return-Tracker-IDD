@@ -113,6 +113,80 @@ def valid_with_gross_purchase_systematic() -> list[dict[str, Any]]:
     ]
 
 
+def valid_sell_with_price_and_unit_balance() -> list[dict[str, Any]]:
+    """SELL row with Price and Unit Balance populated — now valid (optional fields).
+
+    Previously rejected; Price and Unit Balance on SELL/REDEMPTION rows are now
+    optional. When present in the fund statement they are accepted and displayed.
+    Final UB = 0.0 satisfies the 'all units redeemed' terminal check.
+    """
+    return [
+        _row("01/01/2020", "Purchase", 10000, 100.0, 100.0, 100.0),
+        _row("01/01/2021", "SELL", 11500, 100.0, 115.0, 0.0),
+    ]
+
+
+def valid_with_partial_redemptions() -> list[dict[str, Any]]:
+    """Two partial SELL rows — Final Proceeds must sum both amounts.
+
+    Row breakdown:
+      1. Purchase 10000 (100 units @ 100.00, UB 100.0)
+      2. SELL 6000 on 01/07/2020 — partial exit (60 units, UB 40.0)
+      3. SELL 4900 on 01/01/2021 — final exit (40 units, UB 0.0)
+
+    Final Proceeds = 6000 + 4900 = 10900
+    Total Invested = 10000
+    Profit/Loss    = 900
+    """
+    return [
+        _row("01/01/2020", "Purchase", 10000, 100.0, 100.0, 100.0),
+        _row("01/07/2020", "SELL", 6000, 60.0, 100.0, 40.0),
+        _row("01/01/2021", "SELL", 4900, 40.0),
+    ]
+
+
+def valid_with_negative_sell_amount() -> list[dict[str, Any]]:
+    """SELL row with a negative amount — sign must be stripped to positive.
+
+    Functionally identical to valid_two_row() (Purchase 10000 → SELL 11500).
+    The only difference is the SELL amount is supplied as -11500 to simulate
+    fund statements that show redemption amounts as negative numbers.
+    XIRR and all summary metrics must be identical to valid_two_row().
+    """
+    return [
+        _row("01/01/2020", "Purchase", 10000, 100.0, 100.0, 100.0),
+        _row("01/01/2021", "SELL", -11500, 100.0),
+    ]
+
+
+def valid_with_stt_paid() -> list[dict[str, Any]]:
+    """SELL row with an STT Paid row on the same date — netted in XIRR.
+
+    Row breakdown:
+      1. Purchase 10000 on 01/01/2020 (100 units @ 100.00, UB 100.0)
+      2. STT Paid 10 on 01/01/2021    — redemption-side tax; no Price/UB
+      3. SELL 11500 on 01/01/2021     — gross redemption amount
+
+    XIRR cash flows (netted):
+      01/01/2020: -10000  (purchase outflow)
+      01/01/2021: +11490  (11500 gross - 10 STT = net inflow to bank)
+
+    Manual computation:
+      day_fraction = 366 / 365 = 1.00274  (2020 is a leap year)
+      r = (11490/10000)^(1/1.00274) − 1 ≈ 0.14865 → XIRR ≈ 14.86%
+
+    Summary metrics:
+      Total Invested  = 10000 (STT Paid excluded — not a purchase cost)
+      Final Proceeds  = 11500 − 10 = 11490 (gross proceeds minus STT)
+      Profit/Loss     = 11490 − 10000 = 1490
+    """
+    return [
+        _row("01/01/2020", "Purchase", 10000, 100.0, 100.0, 100.0),
+        _row("01/01/2021", "STT Paid", 10),
+        _row("01/01/2021", "SELL", 11500, 100.0),
+    ]
+
+
 # ---------------------------------------------------------------------------
 # Invalid datasets — column/header errors
 # ---------------------------------------------------------------------------
@@ -244,22 +318,6 @@ def sell_missing_units() -> list[dict[str, Any]]:
     ]
 
 
-def sell_with_price() -> list[dict[str, Any]]:
-    """SELL row where Price is populated (must be empty)."""
-    return [
-        _row("01/01/2020", "Purchase", 10000, 100.0, 100.0, 100.0),
-        _row("01/01/2021", "SELL", 11500, 100.0, 115.0, None),
-    ]
-
-
-def sell_with_unit_balance() -> list[dict[str, Any]]:
-    """SELL row where Unit Balance is populated (must be empty)."""
-    return [
-        _row("01/01/2020", "Purchase", 10000, 100.0, 100.0, 100.0),
-        _row("01/01/2021", "SELL", 11500, 100.0, None, 0.0),
-    ]
-
-
 def stamp_duty_with_price() -> list[dict[str, Any]]:
     """Stamp Duty row where Price is populated (must be empty)."""
     return [
@@ -274,6 +332,24 @@ def stamp_duty_with_unit_balance() -> list[dict[str, Any]]:
     return [
         _row("01/01/2020", "Purchase", 10000, 100.0, 100.0, 100.0),
         _row("01/01/2020", "Stamp Duty", 50, None, None, 100.0),
+        _row("01/01/2021", "SELL", 11500, 100.0),
+    ]
+
+
+def stt_paid_with_price() -> list[dict[str, Any]]:
+    """STT Paid row where Price is populated (must be empty)."""
+    return [
+        _row("01/01/2020", "Purchase", 10000, 100.0, 100.0, 100.0),
+        _row("01/01/2021", "STT Paid", 10, None, 1.0, None),
+        _row("01/01/2021", "SELL", 11500, 100.0),
+    ]
+
+
+def stt_paid_with_unit_balance() -> list[dict[str, Any]]:
+    """STT Paid row where Unit Balance is populated (must be empty)."""
+    return [
+        _row("01/01/2020", "Purchase", 10000, 100.0, 100.0, 100.0),
+        _row("01/01/2021", "STT Paid", 10, None, None, 100.0),
         _row("01/01/2021", "SELL", 11500, 100.0),
     ]
 

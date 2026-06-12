@@ -1,7 +1,7 @@
 # Intent Folder
-**Version:** 6  
-**Revised Date:** June 08, 2026  
-**Revision:** Stamp Duty / STT Paid XIRR inclusion; feature.md updated to v2.4 and product-structure.md updated to v2.5
+**Version:** 7  
+**Revised Date:** June 12, 2026  
+**Revision:** feature.md → v2.5, product-structure.md → v2.6 for Redemption/SELL enhancements & STT Paid split
 
 ## Overview
 The **Intent Folder** (`/intent`) is the centralized documentation hub for the **MutualFund-Return-Tracker-IDD** project. It contains:
@@ -16,30 +16,30 @@ This folder is the **source of truth** during development. Every phase reference
 
 ## Contents
 
-### 1. **README.md** (This File)
+### 1. **Intent_README.md** (This File)
 - **File location:** `/intent/Intent_README.md`
 - **Purpose:** Guide to the intent folder structure, versioning, and update process
 - **Audience:** All team members (developers, reviewers, stakeholders)
 - **Update frequency:** Low (reflects folder organization, not project changes)
 
-### 2. **mutual-fund-xirr-tracker-feature.md** — Feature Specification (v2.3)
+### 2. **mutual-fund-xirr-tracker-feature.md** — Feature Specification (v2.5)
 - **File location:** `/intent/mutual-fund-xirr-tracker-feature.md`
 - **Shorthand in conversation:** "feature.md"
 - **Purpose:** Complete feature specification for the XIRR tracker application
 - **Scope:** User journeys, UI requirements, API contracts, validation rules, edge cases, testing checklist, decision log
 - **Audience:** Developers (backend & frontend), QA, product owner
 - **Update frequency:** As feature scope evolves (new validations, UI changes, API revisions)
-- **Status:** Completed — Download Sample Template Feature (June 8, 2026)
-- **Size:** ~680 lines, 16 major sections
+- **Status:** Completed — Redemption/SELL Enhancements & STT Paid Split (June 10, 2026)
+- **Size:** ~700 lines, 16 major sections
 
-### 3. **product-structure.md** — Architecture & Product Structure (v2.4)
+### 3. **product-structure.md** — Architecture & Product Structure (v2.6)
 - **File location:** `/intent/product-structure.md`
 - **Shorthand in conversation:** "structure.md" or "architecture doc" or "product-structure.md"
 - **Purpose:** Technical architecture, folder layout, deployment strategy, and file organization
 - **Scope:** Directory structure, tech stack rationale, Render free tier optimization, development workflow, scaling path, transaction type constants
 - **Audience:** Developers, DevOps, tech leads
 - **Update frequency:** When folder organization, tech stack, or transaction types change (less frequent than feature doc)
-- **Status:** Completed — Download Sample Template Feature (June 8, 2026)
+- **Status:** Completed — Redemption/SELL Enhancements & STT Paid Split (June 10, 2026)
 - **Size:** ~900 lines, comprehensive architecture reference
 
 ---
@@ -108,8 +108,8 @@ A **free, stateless, browser-based tool** that:
 
 | Document | Version | Date | Status | Next Update Trigger |
 |----------|---------|------|--------|---------------------|
-| **feature.md** | 2.4 | June 8, 2026 | Completed — Stamp Duty / STT Paid XIRR Inclusion | New validation rules, UI changes, API revisions |
-| **product-structure.md** | 2.5 | June 8, 2026 | Completed — Stamp Duty / STT Paid XIRR Inclusion | Folder reorganization, tech stack changes, transaction type changes |
+| **feature.md** | 2.5 | June 10, 2026 | Completed — Redemption/SELL enhancements & STT Paid split | New validation rules, UI changes, API revisions |
+| **product-structure.md** | 2.6 | June 10, 2026 | Completed — Redemption/SELL enhancements & STT Paid split | Folder reorganization, tech stack changes, transaction type changes |
 
 ### Version Numbering
 - **Feature Doc:** Major.Minor (2.0, 2.1, 3.0)
@@ -164,8 +164,11 @@ A **free, stateless, browser-based tool** that:
 - **Transaction Limit:** 10,000 rows max (safe for Render 512 MB memory)
 - **File Transactions:** Minimum 2 (1 buy + 1 redemption)
 - **Final Transaction:** Must be SELL/REDEMPTION with Unit Balance = 0
-- **XIRR Calculation:** Includes Stamp Duty / STT Paid as negative outflows; excludes Gross Purchase only
+- **SELL/REDEMPTION:** Price and Unit Balance are optional (may be populated or empty); negative amounts and units accepted (absolute value used)
+- **XIRR Calculation:** Stamp Duty included as negative outflow; STT Paid netted against same-date SELL/REDEMPTION inflow (not a standalone outflow); Gross Purchase excluded
+- **Final Proceeds:** Sum of all SELL/REDEMPTION amounts (absolute values), less total STT Paid amounts
 - **Gross Purchase:** Summary row (e.g., from MFUTILITY) representing gross transaction amount before splitting into Net Purchase + Stamp Duty; excluded from both XIRR and Total Invested
+- **STT Paid:** Separate category from Stamp Duty; excluded from Total Invested; netted against same-date redemption in XIRR cash flow
 
 ### Success Metrics
 - XIRR calculation < 5 seconds (excluding cold-start)
@@ -537,7 +540,7 @@ To avoid confusion when working with Claude or other developers, it's important 
 |----------|-----------------|---------------------------|-------------------|
 | Feature Specification | `mutual-fund-xirr-tracker-feature.md` | "feature.md" | Asking Claude to read or analyze |
 | Architecture Guide | `product-structure.md` | "structure.md" or "architecture" | Asking Claude to generate code |
-| Intent Guide | `README.md` | "Intent README" | Linking in documentation |
+| Intent Guide | `README.md` | "Basic README" | Linking in documentation |
 
 **Examples:**
 
@@ -647,9 +650,10 @@ Happy building! 🚀
 
 **Document Metadata**
 - **Type:** Intent Folder Guide
-- **Version:** 6
+- **Version:** 7
 - **Created:** March 19, 2026
 - **Author:** Hari (Product Owner)
 - **Last Updated:** June 8, 2026 (Download Sample Template feature added; feature.md → v2.3, product-structure.md → v2.4)
 - **Last Updated:** June 8, 2026 (Stamp Duty / STT Paid XIRR inclusion; feature.md → v2.4, product-structure.md → v2.5)
+- **Last Updated:** June 12, 2026 (feature.md → v2.5, product-structure.md → v2.6 for Redemption/SELL enhancements & STT Paid split)
 - **Status:** Active (Referenced during all development phases)

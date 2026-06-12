@@ -1,9 +1,9 @@
 # Product Structure: MutualFund-Return-Tracker-IDD
 
-**Version:** 2.5  
+**Version:** 2.6  
 **Date:** March 19, 2026  
-**Last Updated:** June 8, 2026
-**Revision:** STAMP_DUTY moved from XIRR_EXCLUDED_CATEGORIES to XIRR_OUTFLOW_CATEGORIES
+**Last Updated:** June 12, 2026
+**Revision:** STT_PAID split from STAMP_DUTY as separate TransactionCategory; SELL/REDEMPTION Price/Unit Balance now optional; STT Paid netting against same-date redemptions in XIRR; privacy Disclaimer, feature.md updated to v2.5
 **Context:** Stateless, in-memory file processing on Render free tier (single instance, cold-start delays acceptable)
 ---
 
@@ -256,6 +256,7 @@ class TransactionCategory(str, Enum):
     REDEMPTION = "REDEMPTION"
     DIVIDEND_REINVEST = "DIVIDEND_REINVEST"
     STAMP_DUTY = "STAMP_DUTY"
+    STT_PAID = "STT_PAID"
     GROSS_PURCHASE = "GROSS_PURCHASE"
 ```
 
@@ -264,13 +265,15 @@ class TransactionCategory(str, Enum):
 - `SELL_VARIANTS`: "sell"
 - `REDEMPTION_VARIANTS`: "redemption"
 - `DIVIDEND_REINVEST_VARIANTS`: "dividend reinvest", "dividend reinvestment"
-- `STAMP_DUTY_VARIANTS`: "stamp duty", "stt paid", "less: stamp duty", "less: stt paid", "stamp duty - stt", "stt"
+- `STAMP_DUTY_VARIANTS`: "stamp duty", "less: stamp duty", "stamp duty - stt"
+- `STT_PAID_VARIANTS`: "stt paid", "stt", "less: stt paid"
 - `GROSS_PURCHASE_VARIANTS`: "gross purchase", "gross purchase systematic"
 
 **Transaction Type Keywords (Tier 2 — Keyword-Contains Fallback)**
 | Category | Keywords |
 |----------|----------|
-| STAMP_DUTY | "stamp duty", "stt paid", "stt" |
+| STAMP_DUTY | "stamp duty" |
+| STT_PAID | "stt paid", "stt" |
 | DIVIDEND_REINVEST | "dividend reinvest", "dividend" |
 | REDEMPTION | "redemption", "switch out", "swp" |
 | SELL | "sell" |
@@ -284,41 +287,50 @@ class TransactionCategory(str, Enum):
 # Money outflows in XIRR (negative cash flows)
 # STAMP_DUTY included: represents a real cash cost paid by the investor
 # and must be reflected in the true annualised return calculation
+# STT_PAID is NOT included here — it is netted against same-date SELL/REDEMPTION inflows
 XIRR_OUTFLOW_CATEGORIES = {PURCHASE, DIVIDEND_REINVEST, STAMP_DUTY}
 
 # Money inflows in XIRR (positive cash flows)
 XIRR_INFLOW_CATEGORIES = {SELL, REDEMPTION}
 
-# Excluded from XIRR cash flows entirely
+# Excluded from XIRR cash flows as standalone entries
 # GROSS_PURCHASE excluded because it is a summary row;
 # the actual cash flows are captured by Net Purchase + Stamp Duty
-XIRR_EXCLUDED_CATEGORIES = {GROSS_PURCHASE}
+# STT_PAID excluded as a standalone outflow; its amounts are instead
+# netted against same-date SELL/REDEMPTION inflows in the cash flow builder
+XIRR_EXCLUDED_CATEGORIES = {GROSS_PURCHASE, STT_PAID}
 
 # Categories included in Total Invested summary metric
 TOTAL_INVESTED_CATEGORIES = {PURCHASE, STAMP_DUTY}
 # GROSS_PURCHASE intentionally excluded — would double-count invested amount
+# STT_PAID intentionally excluded — netted against redemption proceeds, not a purchase-side cost
 
 # Valid terminal (last) transaction types
 TERMINAL_CATEGORIES = {SELL, REDEMPTION}
 
 # Price & Unit Balance must be empty
-PRICE_UNIT_BALANCE_EMPTY_CATEGORIES = {SELL, REDEMPTION, STAMP_DUTY, GROSS_PURCHASE}
+# SELL and REDEMPTION removed — Price/Unit Balance are now optional (may be populated)
+PRICE_UNIT_BALANCE_EMPTY_CATEGORIES = {STAMP_DUTY, STT_PAID, GROSS_PURCHASE}
 
 # Units is optional (can be empty without error)
-UNITS_OPTIONAL_CATEGORIES = {STAMP_DUTY, GROSS_PURCHASE}
+UNITS_OPTIONAL_CATEGORIES = {STAMP_DUTY, STT_PAID, GROSS_PURCHASE}
 
 # Units is required (must be populated)
 UNITS_REQUIRED_CATEGORIES = {PURCHASE, SELL, REDEMPTION, DIVIDEND_REINVEST}
 
 # Price & Unit Balance required
 PRICE_UNIT_BALANCE_REQUIRED_CATEGORIES = {PURCHASE, DIVIDEND_REINVEST}
+
+# STT Paid transactions — netted against same-date redemption inflows in XIRR cash flow;
+# excluded from Total Invested; Price and Unit Balance must be empty
+STT_PAID_CATEGORIES = {STT_PAID}
 ```
 
 **Error Message Templates**
 - All row-level errors include 1-based row number
 - GROSS_PURCHASE error: "Row {row}: Gross Purchase transaction must have empty Price and Unit Balance columns"
 - STAMP_DUTY error: "Row {row}: Stamp Duty transaction must have empty Price and Unit Balance columns"
-- SELL/REDEMPTION error: "Row {row}: SELL/REDEMPTION transaction must have empty Price and Unit Balance columns"
+- STT_PAID error: "Row {row}: STT Paid transaction must have empty Price and Unit Balance columns"
 
 **`requirements.txt`** – Dependencies (Render installs from this)
 ```
@@ -369,26 +381,29 @@ python-3.11.7
 - Validate each row (date format, types, values, conditional field requirements per transaction type)
 - Transaction type-specific rules:
   - **PURCHASE/DIVIDEND_REINVEST:** All fields required (Units, Price, Unit Balance)
-  - **SELL/REDEMPTION:** Units required; Price and Unit Balance must be empty
+  - **SELL/REDEMPTION:** Units required; Price and Unit Balance are **optional** (may be populated or empty); negative Amount and Units accepted (absolute value used)
   - **STAMP_DUTY:** Units optional; Price and Unit Balance must be empty
+  - **STT_PAID:** Units optional; Price and Unit Balance must be empty
   - **GROSS_PURCHASE:** Units optional; Price and Unit Balance must be empty (summary row, excluded from XIRR and Total Invested)
 - Validate file-level rules (final redemption, unit balance consistency)
 - Build detailed error messages with row numbers
 - Return `ValidationError` on failure, clean data on success
 
 **`app/services/transaction_processor.py`**
-- Normalize transaction types (case-insensitive variants, keyword-based fallback for Gross Purchase and others)
+- Normalize transaction types (case-insensitive variants, keyword-based fallback for Gross Purchase and others); maps STT Paid variants to STT_PAID category (separate from STAMP_DUTY)
 - Parse dates to DD/MM/YYYY format
 - Round decimals to spec (Amount: 2, Units: 3, Price: 2-4)
-- Filter out Stamp Duty/STT and Gross Purchase for XIRR calculation
+- Strip sign from SELL/REDEMPTION Amount and Units (absolute value stored)
+- Filter out STT_PAID and Gross Purchase as standalone cash flows for XIRR; STT_PAID amounts are passed to xirr_calculator for same-date netting
 
 **`app/services/xirr_calculator.py`**
-- Build cash flow array (exclude Stamp Duty/STT and Gross Purchase)
+- Build cash flow array: PURCHASE/STAMP_DUTY as outflows, SELL/REDEMPTION as inflows (absolute value); GROSS_PURCHASE and STT_PAID excluded as standalone entries
+- Net STT Paid amounts against same-date SELL/REDEMPTION inflows (reduces net redemption cash flow in XIRR)
 - Calculate XIRR using numpy_financial.irr() or pyxirr
 - Handle convergence failures (return error)
 - Calculate summary metrics:
-  - Total Invested (sum of PURCHASE/SIP/Stamp Duty/STT; **Gross Purchase excluded**)
-  - Final Proceeds (SELL/REDEMPTION amount)
+  - Total Invested (sum of PURCHASE/SIP/Stamp Duty; **Gross Purchase and STT Paid excluded**)
+  - Final Proceeds (sum of **all** SELL/REDEMPTION amounts, absolute values, less total STT Paid amounts)
   - Profit/Loss (Final Proceeds - Total Invested)
 - Return formatted response
 
@@ -509,7 +524,7 @@ export default {
 
 #### **Components (7 Total)**
 
-1. **`UploadArea.jsx`** – File input, drag-and-drop, validation
+1. **`UploadArea.jsx`** – File input, drag-and-drop, validation, privacy disclaimer
 2. **`LoadingSpinner.jsx`** – Shows while uploading (0-2 seconds)
 3. **`SkeletonLoader.jsx`** – Shows after 2 seconds (cold-start UX improvement)
 4. **`XirrDisplay.jsx`** – Large XIRR percentage (36px+, green/red)
@@ -572,6 +587,7 @@ export const uploadFile = async (file) => {
 - `TEMPLATE_DOWNLOAD_URL` → `'/MFTransaction_Template.xlsx'` (Vite static asset path; used as `href` on template link)
 - `COLUMN_LABELS` → display labels for the 6 transaction grid columns
 - `APP_NAME` → `'Mutual Fund XIRR Tracker'`
+- `PRIVACY_DISCLAIMER_TEXT` → the in-memory privacy disclaimer string shown below the "Maximum size" note in `UploadArea` (lock icon prefix + one-line text)
 
 #### **Styles**
 
@@ -656,7 +672,6 @@ export const uploadFile = async (file) => {
 - DEVELOPMENT.md – Development workflow & conventions
 - TESTING.md – Testing strategy & coverage
 - DEPLOYMENT.md – Render deployment guide
-- RENDER-FREE-TIER.md – Free tier constraints & workarounds
 - TROUBLESHOOTING.md – Common issues & FAQ
 - images/ – Diagrams & screenshots
 
@@ -1412,12 +1427,12 @@ git push origin main
 ## Versioning & Updates
 
 ### **Intent Document (`intent/mutual-fund-xirr-tracker-feature.md`)**
-- Version 2.3 (current, June 8, 2026 — Download Sample Template feature added to Upload Area)
+- Version 2.5 (current, June 10, 2026 — Redemption/SELL enhancements & STT Paid split from Stamp Duty)
 - Update when feature scope changes
 - Backward-compatible with existing product structure
 
 ### **Product Structure (`intent/product-structure.md`)**
-- Version 2.4 (current, June 8, 2026 — Added template asset and constants for Download Sample Template feature)
+- Version 2.6 (current, June 10, 2026 — STT_PAID category split from STAMP_DUTY; validator/xirr_calculator updated for SELL/REDEMPTION optional Price/Unit Balance and STT Paid netting)
 - Update when folder layout, tech stack, or transaction types change
 - Independent from intent versioning
 
@@ -1505,4 +1520,5 @@ Windows (PowerShell):
 - **Last Updated:** June 7, 2026 (Date format changed from DD-MMM-YYYY to DD/MM/YYYY)
 - **Last Updated:** June 8, 2026 (Added template asset and constants for Download Sample Template feature)
 - **Last Updated:** June 8, 2026 (STAMP_DUTY moved from XIRR_EXCLUDED_CATEGORIES to XIRR_OUTFLOW_CATEGORIES)
-- **Status:** Completed — Stamp Duty / STT Paid XIRR Inclusion
+- **Last Updated:** June 12, 2026 (STT_PAID split from STAMP_DUTY; SELL/REDEMPTION Price/Unit Balance optional; STT Paid netting in XIRR; Privacy Disclaimer; feature.md reference updated to v2.5)
+- **Status:** Completed — Redemption/SELL Enhancements, STT Paid Split & Privacy Disclaimer

@@ -3,7 +3,12 @@ test_transaction_normalizer.py — Unit tests for transaction type normalisation
 
 Covers: all spec-defined variants, case-insensitivity, whitespace tolerance,
 Tier-2 keyword-contains matching for generic real-world fund statement phrases,
-and rejection of unknown types.
+STT_PAID split from STAMP_DUTY (new category with own Tier-1 and Tier-2 entries),
+classification priority ordering, and rejection of unknown types.
+
+Note: sign-stripping of negative SELL/REDEMPTION amounts and units is applied
+in the validator (abs() at parse time), not in the normaliser. Those behaviours
+are tested in test_validator.py.
 """
 
 import pytest
@@ -60,14 +65,34 @@ def test_dividend_reinvest_variants(raw):
 
 # ---------------------------------------------------------------------------
 # STAMP_DUTY variants — Tier 1 exact match
+# Note: "STT Paid", "stt paid", "STT PAID", "less: stt paid", "stt" have been
+# moved to STT_PAID_VARIANTS (see STT_PAID section below).
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("raw", [
     "Stamp Duty", "stamp duty", "STAMP DUTY",
-    "STT Paid", "stt paid", "STT PAID",
+    "Stamp Duty - STT", "stamp duty - stt",
+    "Less: Stamp Duty", "less: stamp duty",
 ])
 def test_stamp_duty_variants(raw):
     assert get_category(raw, 1) == TransactionCategory.STAMP_DUTY
+
+
+# ---------------------------------------------------------------------------
+# STT_PAID variants — Tier 1 exact match
+# These strings were previously in STAMP_DUTY_VARIANTS; they now map to the
+# new STT_PAID category which has different financial semantics:
+#   - Reduces Final Proceeds (not Total Invested)
+#   - Netted against same-date redemption in XIRR cash flows
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("raw", [
+    "STT Paid", "stt paid", "STT PAID",
+    "Less: STT Paid", "less: stt paid", "LESS: STT PAID",
+    "STT", "stt",
+])
+def test_stt_paid_variants(raw):
+    assert get_category(raw, 1) == TransactionCategory.STT_PAID
 
 
 # ---------------------------------------------------------------------------
@@ -161,16 +186,32 @@ def test_dividend_keyword_fallback(raw):
 
 # ---------------------------------------------------------------------------
 # Tier 2 — keyword-contains: STAMP_DUTY generic phrases
+# Only "stamp duty" keyword remains here; "stt paid" and "stt" keywords
+# have moved to STT_PAID (checked first in CATEGORY_KEYWORDS ordering).
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("raw", [
-    "Less: STT",
-    "Less: STT Paid",
     "Less: Stamp Duty",
-    "STT - Equity",
+    "Stamp Duty - Additional",
 ])
 def test_stamp_duty_keyword_fallback(raw):
     assert get_category(raw, 1) == TransactionCategory.STAMP_DUTY
+
+
+# ---------------------------------------------------------------------------
+# Tier 2 — keyword-contains: STT_PAID generic phrases
+# STT_PAID is checked before STAMP_DUTY in CATEGORY_KEYWORDS ordering,
+# so any string containing "stt paid" or "stt" routes to STT_PAID first.
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("raw", [
+    "Less: STT Paid",
+    "Less: STT",
+    "STT - Equity",
+    "STT Deducted",
+])
+def test_stt_paid_keyword_fallback(raw):
+    assert get_category(raw, 1) == TransactionCategory.STT_PAID
 
 
 # ---------------------------------------------------------------------------
@@ -196,9 +237,20 @@ def test_gross_purchase_keyword_fallback(raw):
 # one wins based on CATEGORY_KEYWORDS ordering in constants.py
 # ---------------------------------------------------------------------------
 
-def test_stt_beats_purchase():
-    # "stt" keyword appears in STAMP_DUTY before PURCHASE scan begins
-    assert get_category("STT Purchase Adjustment", 1) == TransactionCategory.STAMP_DUTY
+def test_stt_paid_beats_stamp_duty():
+    # STT_PAID is checked before STAMP_DUTY in CATEGORY_KEYWORDS ordering.
+    # Any string containing "stt" routes to STT_PAID, not STAMP_DUTY.
+    assert get_category("STT Purchase Adjustment", 1) == TransactionCategory.STT_PAID
+    assert get_category("Less: STT", 1) == TransactionCategory.STT_PAID
+
+def test_stt_paid_beats_purchase():
+    # "stt" keyword in STT_PAID is checked long before PURCHASE scan begins
+    assert get_category("STT Purchase Adjustment", 1) == TransactionCategory.STT_PAID
+
+def test_stamp_duty_still_routes_correctly():
+    # "stamp duty" keyword remains in STAMP_DUTY; must not be caught by STT_PAID
+    assert get_category("Less: Stamp Duty", 1) == TransactionCategory.STAMP_DUTY
+    assert get_category("Stamp Duty - Additional", 1) == TransactionCategory.STAMP_DUTY
 
 def test_switch_out_beats_purchase():
     # "switch out" is listed under REDEMPTION; must not fall through to PURCHASE
@@ -241,6 +293,8 @@ def test_is_known_type_true():
     assert is_known_type("Purchase") is True
     assert is_known_type("SELL") is True
     assert is_known_type("stamp duty") is True
+    assert is_known_type("STT Paid") is True          # STT_PAID Tier 1
+    assert is_known_type("stt paid") is True           # STT_PAID Tier 1 lowercase
     assert is_known_type("Gross Purchase") is True
     assert is_known_type("gross purchase systematic") is True
 
@@ -254,7 +308,9 @@ def test_is_known_type_true_tier2():
     assert is_known_type("SWP Redemption") is True
     assert is_known_type("Switch Out") is True
     assert is_known_type("Dividend") is True
-    assert is_known_type("Less: STT") is True
+    assert is_known_type("Less: STT") is True           # → STT_PAID via Tier 2
+    assert is_known_type("Less: STT Paid") is True      # → STT_PAID via Tier 2
+    assert is_known_type("Less: Stamp Duty") is True    # → STAMP_DUTY via Tier 2
     assert is_known_type("Gross Purchase - via MFUTILITY") is True
     assert is_known_type("Gross Purchase Systematic - Instalment 2/155") is True
 

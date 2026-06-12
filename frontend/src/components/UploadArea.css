@@ -83,6 +83,14 @@
   color: var(--color-muted);
 }
 
+.upload-area__privacy {
+  display: inline-block;
+  margin-top: var(--spacing-1);
+  font-size: var(--font-size-xs);
+  color: var(--color-muted);
+  line-height: var(--line-height-normal);
+}
+
 .upload-area__error {
   margin: 0;
   font-size: var(--font-size-sm);
