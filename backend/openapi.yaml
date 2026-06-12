@@ -401,8 +401,9 @@ components:
       properties:
         date:
           type: string
-          pattern: '^\d{2}/\d{2}/\d{4}$'
-          description: Transaction date in DD/MM/YYYY format (e.g., 18/12/2024). Note: this is not ISO 8601 format.
+          pattern: "^\\d{2}/\\d{2}/\\d{4}$"
+          description: |
+            Transaction date in DD/MM/YYYY format (e.g., 18/12/2024). Note: this is not ISO 8601 format.
           examples:
             - "18/12/2024"
         transactionType:
