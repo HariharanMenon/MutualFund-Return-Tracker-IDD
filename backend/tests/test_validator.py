@@ -5,7 +5,11 @@ Each test exercises one validation rule and asserts:
   1. A FileValidationError is raised.
   2. The error details contain the expected substring (row number or field name).
 
-Valid path test confirms that clean data passes without exception.
+Valid path tests confirm that clean data passes without exception, including:
+  - SELL/REDEMPTION with Price and Unit Balance populated (now optional)
+  - SELL/REDEMPTION with negative Amount (sign stripped to positive)
+  - SELL/REDEMPTION with negative Units (abs value used in balance check)
+  - STT Paid rows (new category; Units optional, Price/UB must be empty)
 """
 
 import pytest
@@ -84,6 +88,95 @@ def test_valid_with_gross_purchase_systematic_passes():
     assert "Instalment 2/12" in gross_row_2["raw_type"]
 
 
+def test_sell_with_price_and_unit_balance_passes():
+    """SELL row with Price and Unit Balance populated must now pass validation.
+
+    Previously rejected — Price and Unit Balance were required to be empty on
+    SELL/REDEMPTION rows. They are now optional: populated when the fund statement
+    includes them, empty when not. Both cases must pass.
+    """
+    result = validate(td.valid_sell_with_price_and_unit_balance())
+    assert len(result) == 2
+    sell_row = result[1]
+    assert sell_row["category"].value == "SELL"
+    assert sell_row["price"] == 115.0
+    assert sell_row["unit_balance"] == 0.0
+
+
+def test_sell_negative_amount_accepted():
+    """SELL row with a negative amount must pass — sign is stripped to positive.
+
+    Fund statements sometimes show redemption amounts as negative. The validator
+    applies abs() before storing; the resulting value must equal the absolute amount.
+    """
+    result = validate(td.valid_with_negative_sell_amount())
+    assert len(result) == 2
+    sell_row = result[1]
+    assert sell_row["category"].value == "SELL"
+    assert sell_row["amount"] == 11500.0    # -11500 stripped to positive
+
+
+def test_sell_negative_units_accepted():
+    """SELL row with negative Units must pass — abs value used in balance check.
+
+    Fund statements sometimes show redemption units as negative. The validator
+    applies abs() before the consistency check; the stored value must be positive.
+    """
+    rows = [
+        {"date": "01/01/2020", "transaction type": "Purchase",
+         "amount": 10000, "units": 100.0, "price": 100.0, "unit balance": 100.0},
+        {"date": "01/01/2021", "transaction type": "SELL",
+         "amount": 11500, "units": -100.0, "price": None, "unit balance": None},
+    ]
+    result = validate(rows)
+    sell_row = result[1]
+    assert sell_row["category"].value == "SELL"
+    assert sell_row["units"] == 100.0       # -100.0 stripped to positive
+
+
+def test_valid_with_stt_paid_passes():
+    """STT Paid row validates successfully alongside a SELL row on the same date.
+
+    STT Paid is a new canonical category. It must: pass validation with Units=None,
+    Price=None, Unit Balance=None; be stored with category STT_PAID.
+    """
+    result = validate(td.valid_with_stt_paid())
+    assert len(result) == 3
+    stt_row = result[1]
+    assert stt_row["category"].value == "STT_PAID"
+    assert stt_row["units"] is None
+    assert stt_row["price"] is None
+    assert stt_row["unit_balance"] is None
+
+
+def test_stt_paid_units_optional():
+    """STT Paid with None units must pass (units are optional for STT Paid)."""
+    rows = [
+        {"date": "01/01/2020", "transaction type": "Purchase",
+         "amount": 10000, "units": 100.0, "price": 100.0, "unit balance": 100.0},
+        {"date": "01/01/2021", "transaction type": "STT Paid",
+         "amount": 10, "units": None, "price": None, "unit balance": None},
+        {"date": "01/01/2021", "transaction type": "SELL",
+         "amount": 11500, "units": 100.0, "price": None, "unit balance": None},
+    ]
+    result = validate(rows)
+    assert result[1]["units"] is None
+
+
+def test_stt_paid_units_with_value_accepted():
+    """STT Paid with a units value must also pass (units are optional, not forbidden)."""
+    rows = [
+        {"date": "01/01/2020", "transaction type": "Purchase",
+         "amount": 10000, "units": 100.0, "price": 100.0, "unit balance": 100.0},
+        {"date": "01/01/2021", "transaction type": "STT Paid",
+         "amount": 10, "units": 0.5, "price": None, "unit balance": None},
+        {"date": "01/01/2021", "transaction type": "SELL",
+         "amount": 11500, "units": 100.0, "price": None, "unit balance": None},
+    ]
+    result = validate(rows)
+    assert result[1]["units"] == 0.5
+
+
 # ---------------------------------------------------------------------------
 # Rule 1 — Required column headers
 # ---------------------------------------------------------------------------
@@ -149,7 +242,7 @@ def test_negative_amount():
 
 
 # ---------------------------------------------------------------------------
-# Rules 6–9 — Conditional field requirements per transaction type
+# Rules 6–11 — Conditional field requirements per transaction type
 # ---------------------------------------------------------------------------
 
 def test_purchase_missing_units():
@@ -168,20 +261,22 @@ def test_sell_missing_units():
     _raises(td.sell_missing_units(), match="units")
 
 
-def test_sell_with_price_must_be_empty():
-    _raises(td.sell_with_price(), match="empty")
-
-
-def test_sell_with_unit_balance_must_be_empty():
-    _raises(td.sell_with_unit_balance(), match="empty")
-
-
 def test_stamp_duty_with_price_must_be_empty():
     _raises(td.stamp_duty_with_price(), match="empty")
 
 
 def test_stamp_duty_with_unit_balance_must_be_empty():
     _raises(td.stamp_duty_with_unit_balance(), match="empty")
+
+
+def test_stt_paid_with_price_must_be_empty():
+    """STT Paid row with Price populated must be rejected (Price must be empty)."""
+    _raises(td.stt_paid_with_price(), match="empty")
+
+
+def test_stt_paid_with_unit_balance_must_be_empty():
+    """STT Paid row with Unit Balance populated must be rejected (UB must be empty)."""
+    _raises(td.stt_paid_with_unit_balance(), match="empty")
 
 
 def test_gross_purchase_with_price_must_be_empty():

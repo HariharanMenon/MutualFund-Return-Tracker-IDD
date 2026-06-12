@@ -28,7 +28,7 @@ info:
 servers:
   - url: http://localhost:8000
     description: Local development server
-  - url: https://mf-xirr-tracker-backend.onrender.com
+  - url: https://mf-return-tracker-backend.onrender.com
     description: Render production server (free tier)
     x-environment: production
 
@@ -59,25 +59,27 @@ paths:
         **Column Requirements (case-insensitive, whitespace trimmed):**
         - Date (mandatory): DD/MM/YYYY format only
         - Transaction Type (mandatory): BUY, PURCHASE, SIP, SELL, REDEMPTION, etc.
-        - Amount (mandatory): Numeric currency amount
-        - Units (conditional): Numeric; optional for Stamp Duty/STT
-        - Price (conditional): Empty for SELL/REDEMPTION/Stamp Duty/STT
-        - Unit Balance (conditional): Empty for SELL/REDEMPTION/Stamp Duty/STT
+        - Amount (mandatory): Numeric currency amount; SELL/REDEMPTION may be negative (sign stripped)
+        - Units (conditional): Required for PURCHASE/SELL/REDEMPTION/DIVIDEND_REINVEST; optional for STAMP_DUTY/STT_PAID/GROSS_PURCHASE
+        - Price (conditional): Required for PURCHASE/DIVIDEND_REINVEST; optional for SELL/REDEMPTION; must be empty for STAMP_DUTY/STT_PAID/GROSS_PURCHASE
+        - Unit Balance (conditional): Required for PURCHASE/DIVIDEND_REINVEST; optional for SELL/REDEMPTION; must be empty for STAMP_DUTY/STT_PAID/GROSS_PURCHASE
         
         **Transaction Type Rules:**
-        - Investment types: BUY, PURCHASE, SIP, SYSTEMATIC INVESTMENT, DIVIDEND REINVEST, STAMP DUTY, STT PAID
+        - Investment types (outflow): BUY, PURCHASE, SIP, SYSTEMATIC INVESTMENT, DIVIDEND REINVEST, STAMP DUTY
+        - Redemption-side tax: STT PAID (reduces Final Proceeds; netted against same-date SELL/REDEMPTION in XIRR; excluded from Total Invested)
         - Exit types: SELL, REDEMPTION
-        - Final transaction must be SELL or REDEMPTION with Unit Balance = 0
+        - Summary rows (excluded from XIRR and Total Invested): GROSS PURCHASE and variants
+        - Final transaction must be SELL or REDEMPTION with all units redeemed (unit balance = 0)
         
         **Validation Rules:**
-        - All required columns must be present
-        - Dates must be 1960 or later (no future dates)
-        - Amounts must be non-negative (except SELL/REDEMPTION sign conventions)
-        - Stamp Duty/STT: Price and Unit Balance must be empty
-        - SELL/REDEMPTION: Price and Unit Balance must be empty
-        - All other BUY/SIP: All columns required (Date, Type, Amount, Units, Price, Balance)
-        - Unit balance cumulative validation (when provided)
-        - Last transaction must be SELL/REDEMPTION with Unit Balance = 0
+        - All mandatory columns (Date, Transaction Type, Amount) must be present
+        - Dates must be DD/MM/YYYY format, 1960 or later, not in the future
+        - Amounts must be positive; SELL/REDEMPTION negative amounts accepted (sign stripped to positive)
+        - SELL/REDEMPTION Units: required; may be negative (absolute value used in balance check)
+        - STAMP_DUTY / STT_PAID / GROSS_PURCHASE: Price and Unit Balance must be empty
+        - PURCHASE / DIVIDEND_REINVEST: Units, Price, and Unit Balance are all required
+        - Unit balance cumulative consistency check (when provided)
+        - Last transaction must be SELL/REDEMPTION with all units redeemed
         - Minimum 2 transactions required
         - Maximum 10,000 transactions per file
       
@@ -127,7 +129,7 @@ paths:
                         amount: 118100.00
                         units: 10000.000
                         price: null
-                        unitBalance: 0.000
+                        unitBalance: null
                 negativeXIRR:
                   summary: Successful upload with negative XIRR (loss scenario)
                   value:
@@ -155,7 +157,35 @@ paths:
                         amount: 450000.00
                         units: 9500.000
                         price: null
-                        unitBalance: 0.000
+                        unitBalance: null
+                sttPaidNetting:
+                  summary: Successful upload showing STT Paid netted against redemption
+                  value:
+                    success: true
+                    xirr: 14.86
+                    summaryMetrics:
+                      totalInvested: 10000.00
+                      finalProceeds: 11490.00
+                      profitLoss: 1490.00
+                    transactions:
+                      - date: "01/01/2020"
+                        transactionType: "Purchase"
+                        amount: 10000.00
+                        units: 100.000
+                        price: 100.00
+                        unitBalance: 100.000
+                      - date: "01/01/2021"
+                        transactionType: "STT Paid"
+                        amount: 10.00
+                        units: null
+                        price: null
+                        unitBalance: null
+                      - date: "01/01/2021"
+                        transactionType: "SELL"
+                        amount: 11500.00
+                        units: 100.000
+                        price: null
+                        unitBalance: null
         
         '400':
           description: |
@@ -179,14 +209,14 @@ paths:
                     success: false
                     error:
                       message: "File validation failed"
-                      details: "Row 5: Date column contains invalid format '15-Jan-2020' (expected DD/MM/YYYY, e.g., 18/12/2024)"
+                      details: "Row 5: Invalid date format '15-Jan-2020' (expected DD/MM/YYYY, e.g., 18/12/2024)"
                 futureDate:
                   summary: Date is in the future
                   value:
                     success: false
                     error:
                       message: "File validation failed"
-                      details: "Row 3: Date '25/12/2026' is in the future. Transactions must be dated today or earlier."
+                      details: "Row 3: Transaction date '25/12/2026' is in the future; cannot process"
                 invalidTransactionType:
                   summary: Invalid transaction type
                   value:
@@ -223,19 +253,19 @@ paths:
                       message: "File validation failed"
                       details: "File contains 15,234 transactions. Maximum allowed: 10,000"
                 stampDutyError:
-                  summary: Stamp Duty/STT must not have Price or Unit Balance
+                  summary: Stamp Duty must not have Price or Unit Balance
                   value:
                     success: false
                     error:
                       message: "File validation failed"
-                      details: "Row 4: STAMP DUTY transaction must have empty Price and Unit Balance columns. Found: Price=0.50, Unit Balance=9500.000"
-                sellPriceError:
-                  summary: SELL must not have Price or Unit Balance
+                      details: "Row 4: Stamp Duty transaction must have empty Price and Unit Balance columns"
+                sttPaidError:
+                  summary: STT Paid must not have Price or Unit Balance
                   value:
                     success: false
                     error:
                       message: "File validation failed"
-                      details: "Row 8: SELL transaction must have empty Price and Unit Balance columns. Found Price=50.00"
+                      details: "Row 5: STT Paid transaction must have empty Price and Unit Balance columns"
                 inconsistentBalance:
                   summary: Cumulative units don't match Unit Balance
                   value:
@@ -371,36 +401,54 @@ components:
       properties:
         date:
           type: string
-          format: date
-          pattern: '^\d{2}/\d{2}/\d{4}$'
-          description: Transaction date in DD/MM/YYYY format (e.g., 18/12/2024)
+          pattern: "^\\d{2}/\\d{2}/\\d{4}$"
+          description: |
+            Transaction date in DD/MM/YYYY format (e.g., 18/12/2024). Note: this is not ISO 8601 format.
           examples:
             - "18/12/2024"
         transactionType:
           type: string
-          description: Type of transaction (investment, exit, or fee)
-          enum:
-            - BUY
-            - PURCHASE
-            - SIP
-            - SIP PURCHASE
-            - SYSTEMATIC INVESTMENT
-            - SYSTEMATIC INVESTMENT PLAN
-            - SELL
-            - REDEMPTION
-            - DIVIDEND REINVEST
-            - STAMP DUTY
-            - STT PAID
+          description: |
+            Raw transaction type string as it appeared in the uploaded Excel file.
+            This field is preserved as-is (not normalised) so the UI can display
+            the original fund statement wording.
+
+            The backend normalises this string internally to a canonical category
+            for calculation purposes. Common raw values include:
+
+            Purchase-side: "Purchase", "Buy", "SIP", "SIP Purchase",
+              "Systematic Investment", "Systematic Investment Plan",
+              "Net Purchase", "Additional Purchase", "Fresh SIP",
+              "Switch In", "Dividend Reinvest", "Dividend Reinvestment",
+              "Stamp Duty", "Less: Stamp Duty"
+
+            Gross summary rows (excluded from XIRR/Total Invested):
+              "Gross Purchase", "Gross Purchase Systematic",
+              "Gross Purchase - via MFUTILITY",
+              "Gross Purchase Systematic - Instalment 2/155"
+
+            Redemption-side tax: "STT Paid", "Less: STT Paid", "STT"
+
+            Exit types: "SELL", "REDEMPTION", "SWP Redemption", "Switch Out"
           examples:
-            - "BUY"
+            - "Purchase"
+            - "SIP"
+            - "SELL"
+            - "REDEMPTION"
+            - "Stamp Duty"
+            - "STT Paid"
+            - "Gross Purchase - via MFUTILITY"
+            - "Net Purchase"
         amount:
           type: number
           format: double
           description: |
-            Transaction amount in currency (₹). 
-            For BUY/SIP: positive (amount invested)
-            For SELL/REDEMPTION: positive (amount received)
-            For STAMP DUTY/STT: positive (cost paid)
+            Transaction amount in currency (₹). Always positive in the response
+            (negative SELL/REDEMPTION amounts in the source file are sign-stripped).
+            For PURCHASE/SIP: amount invested (positive outflow from investor)
+            For SELL/REDEMPTION: gross amount received before STT deduction
+            For STAMP_DUTY: purchase-side cost (increases Total Invested)
+            For STT_PAID: redemption-side tax (reduces Final Proceeds; excluded from Total Invested)
             Displayed with 2 decimal places.
           examples:
             - 100000.00
@@ -412,7 +460,10 @@ components:
           format: double
           description: |
             Number of units transacted. 
-            Null for STAMP DUTY/STT PAID (optional).
+            Required for PURCHASE, SELL, REDEMPTION, and DIVIDEND_REINVEST.
+            Optional (may be null) for STAMP_DUTY, STT_PAID, and GROSS_PURCHASE.
+            SELL/REDEMPTION units may be negative in the source file; the
+            absolute value is stored and returned.
             Displayed with 3 decimal places.
           examples:
             - 10000.000
@@ -424,7 +475,10 @@ components:
           format: double
           description: |
             Unit price (₹/unit) at transaction time.
-            Null for SELL, REDEMPTION, STAMP DUTY, STT PAID.
+            Required and populated for PURCHASE and DIVIDEND_REINVEST.
+            Optional for SELL and REDEMPTION — populated when the fund statement
+            includes it, null when not.
+            Always null for STAMP_DUTY, STT_PAID, and GROSS_PURCHASE rows.
             Displayed with 2–4 decimal places as per original input.
           examples:
             - 10.00
@@ -436,8 +490,11 @@ components:
           format: double
           description: |
             Cumulative unit balance after transaction.
-            Null for SELL, REDEMPTION, STAMP DUTY, STT PAID.
-            Must be 0.000 for final SELL/REDEMPTION.
+            Required and populated for PURCHASE and DIVIDEND_REINVEST.
+            Optional for SELL and REDEMPTION — populated when the fund statement
+            includes it, null when not. When present on the final SELL/REDEMPTION,
+            must be 0.000 (all units redeemed).
+            Always null for STAMP_DUTY, STT_PAID, and GROSS_PURCHASE rows.
             Displayed with 3 decimal places.
           examples:
             - 10000.000
@@ -456,8 +513,10 @@ components:
           type: number
           format: double
           description: |
-            Sum of all investment amounts (BUY, PURCHASE, SIP, SYSTEMATIC INVESTMENT, 
-            DIVIDEND REINVEST, STAMP DUTY, STT PAID).
+            Sum of all PURCHASE and STAMP_DUTY transaction amounts.
+            DIVIDEND_REINVEST is an XIRR outflow but is not included here.
+            STT_PAID is excluded — it is a redemption-side tax, not an investment cost.
+            GROSS_PURCHASE summary rows are excluded to avoid double-counting.
             Displayed with 2 decimal places and ₹ currency symbol.
           examples:
             - 1250000.00
@@ -465,7 +524,10 @@ components:
           type: number
           format: double
           description: |
-            Amount received from final SELL or REDEMPTION transaction.
+            Sum of ALL SELL and REDEMPTION transaction amounts (absolute values,
+            sign stripped if negative in source file), minus the total of all
+            STT_PAID amounts across the file. Represents the net amount that
+            actually reaches the investor's bank account (pocket-to-pocket).
             Displayed with 2 decimal places and ₹ currency symbol.
           examples:
             - 1475500.00
@@ -500,7 +562,12 @@ components:
           description: |
             XIRR (Extended Internal Rate of Return) as percentage.
             Positive (green) for gain; negative (red) for loss.
-            Calculated excluding Stamp Duty/STT paid transactions.
+            Cash flow sign convention:
+              PURCHASE / DIVIDEND_REINVEST / STAMP_DUTY → negative outflow
+              SELL / REDEMPTION → positive inflow, net of same-date STT_PAID
+              STT_PAID → netted against the SELL/REDEMPTION inflow on the same
+                         date (pocket-to-pocket); no separate cash flow entry
+              GROSS_PURCHASE → excluded (summary row, double-count risk)
             Rounded to 2 decimal places (e.g., 12.54 for 12.54%).
           examples:
             - 12.54
@@ -528,7 +595,7 @@ components:
                 amount: 118100.00
                 units: 10000.000
                 price: null
-                unitBalance: 0.000
+                unitBalance: null
       required:
         - success
         - xirr

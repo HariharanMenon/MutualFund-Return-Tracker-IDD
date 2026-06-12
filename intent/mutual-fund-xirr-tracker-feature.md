@@ -1,9 +1,9 @@
 # Intent: Mutual Fund XIRR Return Tracker
 
 **Date:** March 18, 2026  
-**Status:** Completed — Stamp Duty / STT Paid XIRR Inclusion  
+**Status:** Completed — Redemption/SELL Enhancements & STT Paid Split & Privacy disclosure
 **Priority:** MVP (Minimum Viable Product)  
-**Revision:** 2.4 – Stamp Duty / STT Paid included in XIRR cash flows as outflows
+**Revision:** 2.5 – Redemption/SELL Price/Unit Balance optional; STT Paid split from Stamp Duty; negative SELL/REDEMPTION amounts/units accepted, privacy Disclaimer
 
 ---
 
@@ -75,9 +75,10 @@ React State Update + Render Grid + Display XIRR + Summary Metrics
 ### Step 4: Validation & Error Handling (Strict Mode)
 If **any** of the following occur → **reject file with detailed error**:
 - Missing required column(s) (Date, Transaction Type, Amount)
-- **For Stamp Duty / STT Paid transactions:** Price and Unit Balance must be empty; Units is optional (can be empty)
+- **For Stamp Duty transactions:** Price and Unit Balance must be empty; Units is optional (can be empty). Stamp Duty is excluded from XIRR cash flows but included in Total Invested.
+- **For STT Paid transactions:** Price and Unit Balance must be empty; Units is optional (can be empty). STT Paid is a **separate category** from Stamp Duty. STT Paid amounts are **netted against same-date SELL/REDEMPTION cash flows** in XIRR calculation (reducing the inflow), and are **excluded from Total Invested**.
 - **For Gross Purchase transactions (e.g., Gross Purchase - via MFUTILITY, Gross Purchase Systematic - Instalment N/N):** Price and Unit Balance must be empty; Units is optional (can be empty). Gross Purchase is a summary row representing the gross transaction amount before splitting into Net Purchase + Stamp Duty. It is excluded from XIRR cash flows and Total Invested calculation.
-- **For SELL/REDEMPTION transactions:** Price and Unit Balance must be empty/null (only Date, Transaction Type, Amount, Units required)
+- **For SELL/REDEMPTION transactions:** Price and Unit Balance are **optional** (may be populated or empty); Date, Transaction Type, Amount, and Units are required. Amount sign convention: negative amounts are accepted and treated as positive (absolute value used). Units sign convention: absolute value used in unit balance consistency check.
 - **For BUY/PURCHASE/SIP/Systematic Investment/DIVIDEND REINVEST transactions:** All columns required (Date, Transaction Type, Amount, Units, Price, Unit Balance)
 - Invalid data types in any row (e.g., non-date in Date column, non-numeric where required)
 - Date outside acceptable range (transactions must be from 1960 onwards; reject dates before 1960 or in future)
@@ -103,10 +104,10 @@ Return to user: **Specific error message** (e.g., "Row 5: Date column contains i
    - Format: `XIRR: 12.54%` (no "p.a.", "annualized", or year-specific notation)
    - XIRR is calculated for all transactions till date (not year-specific)
 5. **Summary metrics displayed** (mandatory):
-   - **Total Invested:** Sum of all PURCHASE/BUY/SIP/Systematic Investment/Stamp Duty/STT Paid transactions (Gross Purchase **excluded** — it is a summary row; the actual investment is captured by accompanying Net Purchase and Stamp Duty rows)
-   - **Final Proceeds:** Amount from final SELL/REDEMPTION transaction
+   - **Total Invested:** Sum of all PURCHASE/BUY/SIP/Systematic Investment/Stamp Duty transactions (Gross Purchase **excluded** — it is a summary row; the actual investment is captured by accompanying Net Purchase and Stamp Duty rows; STT Paid **excluded** — it is netted against redemption in XIRR, not treated as a standalone investment cost)
+   - **Final Proceeds:** Sum of all SELL/REDEMPTION transaction amounts (absolute values), less total STT Paid amounts on the same dates
    - **Profit/Loss:** Final Proceeds – Total Invested (formatted as currency, green if positive, red if negative)
-   - **Note:** Stamp Duty / STT Paid transactions are included in **both** Total Invested and XIRR cash flows (as negative outflows), reflecting the true cost of investment. Gross Purchase remains excluded from both.
+   - **Note:** Stamp Duty transactions are included in **both** Total Invested and XIRR cash flows (as negative outflows). STT Paid transactions are **not** included in Total Invested; instead, STT Paid amounts are netted against same-date SELL/REDEMPTION inflows in the XIRR cash flow, reflecting the true net proceeds received. Gross Purchase remains excluded from both.
 
 ---
 
@@ -121,6 +122,7 @@ Return to user: **Specific error message** (e.g., "Row 5: Date column contains i
 - **Disabled during upload** (prevent multiple simultaneous uploads)
 - Shows **spinner while uploading** (labeled "Processing file...")
 - **Template download link** ("Download sample template") rendered inline in the secondary text area; hidden when upload is in progress; uses HTML `download` attribute for direct file save without navigation; `onClick` stops propagation to prevent triggering the drop-zone click handler
+- **Privacy disclaimer** displayed below the "Maximum size" note with a lock icon and the following text: "🔒 Privacy-safe: Your data is private. Your uploaded file is processed entirely in-memory and discarded immediately after results are returned. No data is stored anywhere." Hidden when upload is in progress (same visibility rule as the template download link)
 
 #### 4.2 XIRR Display Panel
 - **Prominent, large text** (at least 36px font)
@@ -132,7 +134,7 @@ Return to user: **Specific error message** (e.g., "Row 5: Date column contains i
 #### 4.3 Summary Metrics Panel (Mandatory)
 - **Display below XIRR panel** with three metrics:
   1. **Total Invested:** ₹12,50,000 (currency symbol, 2 decimal places)
-  2. **Final Proceeds:** ₹14,75,500 (currency symbol, 2 decimal places)
+  2. **Final Proceeds:** ₹14,75,500 (sum of all SELL/REDEMPTION amounts less STT Paid; currency symbol, 2 decimal places)
   3. **Profit/Loss:** ₹2,25,500 (green if positive, red if negative, currency symbol, 2 decimal places)
 - Initially hidden; shows after successful processing alongside XIRR
 
@@ -142,8 +144,8 @@ Return to user: **Specific error message** (e.g., "Row 5: Date column contains i
   2. Transaction Type (Purchase, Buy, SIP, SIP Purchase, Systematic Investment, Systematic Investment Plan, Gross Purchase, Gross Purchase Systematic, Gross Purchase - via MFUTILITY, SELL, REDEMPTION, DIVIDEND REINVEST, Stamp Duty, STT Paid, etc.) — **Always required**
   3. Amount (₹ or currency symbol, 2 decimal places) — **Always required**
   4. Units (numeric, 3 decimal places) — **Required except for Stamp Duty / STT Paid / Gross Purchase (optional)**
-  5. Price (₹/unit, 2–4 decimal places as per user entry) — **Optional: Empty for SELL, REDEMPTION, Stamp Duty, Gross Purchase, and STT Paid transactions**
-  6. Unit Balance (cumulative units held, 3 decimal places) — **Optional: Empty for SELL, REDEMPTION, Stamp Duty, Gross Purchase, and STT Paid transactions**
+  5. Price (₹/unit, 2–4 decimal places as per user entry) — **Optional: Empty for Stamp Duty, Gross Purchase, and STT Paid transactions; optional (may be populated) for SELL/REDEMPTION**
+  6. Unit Balance (cumulative units held, 3 decimal places) — **Optional: Empty for Stamp Duty, Gross Purchase, and STT Paid transactions; optional (may be populated) for SELL/REDEMPTION**
 
 - **Display behavior:**
   - Rows in **file order** (no pre-sorting in v1)
@@ -277,7 +279,8 @@ class UploadResponse(BaseModel):
    - Recognize variants: "SELL", "Sell" → **SELL transactions**
    - Recognize variants: "REDEMPTION", "Redemption" → **REDEMPTION transactions**
    - Recognize: "DIVIDEND REINVEST", "Dividend Reinvest" → **DIVIDEND REINVEST transactions**
-   - Recognize variants: "Stamp Duty", "STAMP DUTY", "STT Paid", "STT PAID" → **Stamp Duty / STT Paid transactions** (treated identically)
+   - Recognize variants: "Stamp Duty", "STAMP DUTY", "Less: Stamp Duty" → **STAMP_DUTY transactions** (included in Total Invested; included in XIRR as outflow)
+   - Recognize variants: "STT Paid", "STT PAID", "stt", "Less: STT Paid" → **STT_PAID transactions** (excluded from Total Invested; netted against same-date redemption in XIRR)
 
 ---
 
@@ -291,8 +294,8 @@ class UploadResponse(BaseModel):
 | **Transaction Type** | Yes | String | Case-insensitive; see normalization rules | No | Must match recognized transaction types |
 | **Amount** | Yes | Numeric | Positive (PURCHASE/SELL sign convention) | No | For PURCHASE: positive (outflow); For SELL/REDEMPTION: positive (inflow) |
 | **Units** | Conditional | Numeric | 3 decimal places | Yes (for Stamp Duty/STT Paid only) | Nullable for Stamp Duty/STT Paid; required for all others |
-| **Price** | Conditional | Numeric | 2–4 decimal places as per entry | Yes | Nullable for SELL, REDEMPTION, Stamp Duty, STT Paid; required for PURCHASE, DIVIDEND REINVEST |
-| **Unit Balance** | Conditional | Numeric | 3 decimal places | Yes | Nullable for SELL, REDEMPTION, Stamp Duty, STT Paid; required for PURCHASE, DIVIDEND REINVEST |
+| **Price** | Conditional | Numeric | 2–4 decimal places as per entry | Yes | Nullable for Stamp Duty, STT Paid, Gross Purchase; **optional** for SELL/REDEMPTION (may be populated); required for PURCHASE, DIVIDEND REINVEST |
+| **Unit Balance** | Conditional | Numeric | 3 decimal places | Yes | Nullable for Stamp Duty, STT Paid, Gross Purchase; **optional** for SELL/REDEMPTION (may be populated); required for PURCHASE, DIVIDEND REINVEST |
 
 ### Empty Cell Validation
 - **Empty cells:** null, blank string (""), or whitespace only
@@ -309,22 +312,33 @@ class UploadResponse(BaseModel):
   - Price > 0
   - Unit Balance > 0
 
-#### Stamp Duty / STT Paid Transactions
+#### Stamp Duty Transactions
 - **Required fields:** Date, Transaction Type, Amount
 - **Optional fields:** Units (can be empty)
 - **Must be empty:** Price, Unit Balance
 - **Validation:**
   - Amount > 0
   - If Units provided: Units > 0
-- **XIRR treatment:** Ignored for XIRR calculation; does NOT reduce initial investment
+- **XIRR treatment:** Included as negative outflow in XIRR cash flows
+- **Total Invested treatment:** Included in Total Invested
+
+#### STT Paid Transactions
+- **Required fields:** Date, Transaction Type, Amount
+- **Optional fields:** Units (can be empty)
+- **Must be empty:** Price, Unit Balance
+- **Validation:**
+  - Amount > 0
+  - If Units provided: Units > 0
+- **XIRR treatment:** Netted against same-date SELL/REDEMPTION inflow (reduces the redemption cash flow amount in XIRR)
+- **Total Invested treatment:** Excluded from Total Invested
 
 #### SELL / REDEMPTION Transactions
 - **Required fields:** Date, Transaction Type, Amount, Units
-- **Must be empty:** Price, Unit Balance
+- **Optional fields:** Price, Unit Balance (may be populated or empty)
 - **Validation:**
-  - Amount > 0 (inflow convention)
-  - Units > 0
-  - Final SELL/REDEMPTION must have Unit Balance = 0 (implicitly, since Price/Unit Balance are empty)
+  - Amount: positive or negative accepted; absolute value used in all calculations
+  - Units: positive or negative accepted; absolute value used in unit balance consistency check
+  - Final SELL/REDEMPTION must have Unit Balance = 0 (if Unit Balance is provided)
 
 #### DIVIDEND REINVEST Transactions
 - **Required fields:** Date, Transaction Type, Amount, Units, Price, Unit Balance
@@ -355,21 +369,23 @@ class UploadResponse(BaseModel):
 ## 7. XIRR Calculation & Summary Metrics
 
 ### XIRR Calculation Logic
-1. **Filter transactions:** Exclude Stamp Duty / STT Paid transactions (they do not contribute to cash flows)
+1. **Filter transactions:** Exclude Gross Purchase and STT Paid transactions from the raw cash flow list (STT Paid is handled separately via netting, not as a standalone outflow)
 2. **Build cash flow array:**
    - PURCHASE/Investment transactions: **negative** (cash outflow)
-   - SELL/REDEMPTION transactions: **positive** (cash inflow)
+   - STAMP_DUTY transactions: **negative** (cash outflow — true cost of investment)
+   - SELL/REDEMPTION transactions: **positive** (cash inflow) — amount = absolute value of transaction amount
    - DIVIDEND REINVEST: **negative** (reinvested = additional investment)
-3. **Apply XIRR formula:** Calculate using `numpy_financial.irr()` or `pyxirr.xirr()`
-4. **Handle convergence failure:** If XIRR cannot converge (rare edge case), return error: `"Cannot calculate XIRR for this data. Please verify all transactions."`
-5. **Format result:** Round to 2 decimal places
+3. **Net STT Paid against same-date redemptions:** For each STT Paid transaction, subtract its amount from the SELL/REDEMPTION cash flow on the same date. This reduces the net inflow for that date, producing a more accurate XIRR that reflects the true proceeds received after STT.
+4. **Apply XIRR formula:** Calculate using `numpy_financial.irr()` or `pyxirr.xirr()`
+5. **Handle convergence failure:** If XIRR cannot converge (rare edge case), return error: `"Cannot calculate XIRR for this data. Please verify all transactions."`
+6. **Format result:** Round to 2 decimal places
 
 ### Summary Metrics Calculation
 
 | Metric | Formula | Format |
 |--------|---------|--------|
-| **Total Invested** | Sum of all PURCHASE/Buy/SIP/Systematic Investment/Stamp Duty/STT Paid transaction amounts | Currency with 2 decimals (₹) |
-| **Final Proceeds** | Amount from final SELL/REDEMPTION transaction | Currency with 2 decimals (₹) |
+| **Total Invested** | Sum of all PURCHASE/Buy/SIP/Systematic Investment/Stamp Duty transaction amounts (STT Paid and Gross Purchase excluded) | Currency with 2 decimals (₹) |
+| **Final Proceeds** | Sum of all SELL/REDEMPTION transaction amounts (absolute values), less total STT Paid amounts | Currency with 2 decimals (₹) |
 | **Profit/Loss** | Final Proceeds – Total Invested | Currency with 2 decimals (₹); green if positive, red if negative |
 
 ### Display Format
@@ -473,7 +489,9 @@ class UploadResponse(BaseModel):
 - [ ] Accept Buy, Purchase, SIP, SIP Purchase, Systematic Investment, Systematic Investment Plan as equivalent investment transactions
 - [ ] Accept DIVIDEND REINVEST (with space) as valid investment transaction
 - [ ] Accept SELL and REDEMPTION as equivalent exit transactions
-- [ ] Reject SELL/REDEMPTION with non-empty Price or Unit Balance fields
+- [ ] Accept SELL/REDEMPTION rows with Price and Unit Balance populated (no longer rejected)
+- [ ] Accept SELL/REDEMPTION rows with negative Amount (sign stripped, absolute value used)
+- [ ] Accept SELL/REDEMPTION rows with negative Units (absolute value used in balance check)
 - [ ] Reject Stamp Duty / STT Paid with non-empty Price or Unit Balance fields
 - [ ] Accept Stamp Duty / STT Paid with empty Units field
 - [ ] Reject Stamp Duty / STT Paid transactions where Price or Unit Balance are not empty
@@ -485,7 +503,8 @@ class UploadResponse(BaseModel):
 
 ### XIRR Calculation
 - [ ] Calculate correct XIRR for sample fund data (verify manually)
-- [ ] Exclude Stamp Duty / STT Paid from XIRR calculation
+- [ ] Exclude Stamp Duty from XIRR cash flows (included as outflow)
+- [ ] Net STT Paid against same-date SELL/REDEMPTION in XIRR cash flow
 - [ ] Display positive XIRR in green; negative in red
 - [ ] Round XIRR to 2 decimal places (e.g., 12.54%)
 - [ ] Handle edge case: very high XIRR (e.g., quick flip)
@@ -493,8 +512,8 @@ class UploadResponse(BaseModel):
 - [ ] Return error when XIRR cannot converge
 
 ### Summary Metrics
-- [ ] Total Invested = sum of all PURCHASE/SIP/Systematic Investment/Stamp Duty/STT Paid transactions
-- [ ] Final Proceeds = amount from final SELL/REDEMPTION transaction
+- [ ] Total Invested = sum of all PURCHASE/SIP/Systematic Investment/Stamp Duty transactions (STT Paid excluded)
+- [ ] Final Proceeds = sum of all SELL/REDEMPTION amounts (absolute values) less total STT Paid amounts
 - [ ] Profit/Loss = Final Proceeds – Total Invested
 - [ ] Display metrics with ₹ symbol and 2 decimal places
 - [ ] Color code Profit/Loss (green positive, red negative)
@@ -554,6 +573,9 @@ class UploadResponse(BaseModel):
 | **Mandatory summary metrics** | Provides financial context for XIRR; improves UX | Slightly more backend processing |
 | **Stamp Duty/STT included in XIRR as outflow** | Stamp Duty/STT represent a real cash cost paid by the investor and should be reflected in the true annualised return; including them as negative outflows produces a more accurate XIRR | Slightly lowers the reported XIRR vs the previous approach, but more accurately reflects real investment cost |
 | **Gross Purchase excluded from XIRR and Total Invested** | Gross Purchase is a summary row; the actual cash flows are captured by Net Purchase + Stamp Duty in the same transaction group. Including it would double-count the invested amount. | Real-world fund statements (e.g., MFUTILITY) always split gross amount into Net Purchase + Stamp Duty rows, so exclusion is semantically correct. |
+| **STT Paid split from Stamp Duty** | STT Paid (Securities Transaction Tax) is levied at redemption time and should be netted against the redemption inflow in XIRR, not treated as a purchase-side cost. Keeping it separate from Stamp Duty allows correct categorization. | Requires a new `STT_PAID` category, separate normalizer variants, and netting logic in the XIRR calculator. |
+| **SELL/REDEMPTION Price/Unit Balance optional** | Some fund statement exports populate Price and Unit Balance on SELL/REDEMPTION rows. Rejecting these was unnecessarily strict; the fields are informational and do not affect XIRR or summary calculation. | Removes a validation that previously caused file rejections for otherwise valid data. |
+| **Negative SELL/REDEMPTION amounts/units accepted** | Some fund statement exports represent SELL/REDEMPTION amounts or units as negative numbers. Accepting and taking the absolute value avoids unnecessary user friction while producing identical calculation results. | Adds sign-stripping logic in the normalizer; no impact on calculation accuracy. |
 
 ---
 
@@ -668,7 +690,7 @@ Render Free Instance
 
 ---
 
-**End of Intent Document**
+**End of Feature Document**
 
 ---
 
@@ -678,4 +700,5 @@ Render Free Instance
 - **Revised:** June 7, 2026 (Date format changed from DD-MMM-YYYY to DD/MM/YYYY)
 - **Revised:** June 8, 2026 (Download Sample Template feature added to Upload Area)
 - **Revised:** June 8, 2026 (Stamp Duty / STT Paid included in XIRR cash flows as outflows)
-- **Status:** Completed — Stamp Duty / STT Paid XIRR Inclusion
+- **Revised:** June 11, 2026 (Redemption/SELL enhancements: Price/Unit Balance optional; STT Paid split from Stamp Duty as separate category; negative amounts/units accepted & privacy disclaimer in screen)
+- **Status:** Completed — Redemption/SELL Enhancements, STT Paid Split & Privacy Disclaimer

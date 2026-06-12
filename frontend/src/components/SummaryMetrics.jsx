@@ -6,8 +6,11 @@ import './SummaryMetrics.css';
  *
  * Props:
  *   metrics {Object}
- *     totalInvested  {number}  Sum of all buy-side transactions
- *     finalProceeds  {number}  Final SELL/REDEMPTION amount
+ *     totalInvested  {number}  Sum of all PURCHASE + Stamp Duty transactions
+ *     finalProceeds  {number}  Sum of all SELL/REDEMPTION amounts less total
+ *                              STT Paid — computed by the backend; this component
+ *                              displays the value as-is regardless of how many
+ *                              redemption rows contributed to it
  *     profitLoss     {number}  finalProceeds − totalInvested
  */
 export default function SummaryMetrics({ metrics }) {

@@ -10,12 +10,15 @@ Validates raw parsed Excel data against all spec rules (§3 Step 4, §6):
   Per-row (in file order, stops on first error):
     3.  Transaction type is recognised (case-insensitive)
     4.  Date is DD/MM/YYYY format, in range [1960-01-01, today]
-    5.  Amount is numeric and positive
+    5.  Amount is numeric and positive; SELL/REDEMPTION amounts may be negative (sign stripped)
     6.  PURCHASE / DIVIDEND_REINVEST: Units, Price, Unit Balance required and positive
-    7.  SELL / REDEMPTION: Units required and positive; Price and Unit Balance MUST be empty
+    7.  SELL / REDEMPTION: Units required (positive or negative — abs value used); Price and
+        Unit Balance are OPTIONAL (populated or empty); amount sign is ignored (abs value used)
     8.  STAMP_DUTY: Units optional; Price and Unit Balance MUST be empty
-    9.  GROSS_PURCHASE: Units optional; Price and Unit Balance MUST be empty
-    10. Unit balance consistency: cumulative units must match Unit Balance column (within tolerance)
+    9.  STT_PAID: Units optional; Price and Unit Balance MUST be empty
+    10. GROSS_PURCHASE: Units optional; Price and Unit Balance MUST be empty
+    11. Unit balance consistency: cumulative units must match Unit Balance column (within
+        tolerance); SELL/REDEMPTION units use abs value in the cumulative calculation
 
   File-level:
     11. Last transaction must be SELL or REDEMPTION
@@ -41,6 +44,7 @@ from app.utils.constants import (
     MIN_TRANSACTIONS,
     PRICE_UNIT_BALANCE_EMPTY_CATEGORIES,
     PRICE_UNIT_BALANCE_REQUIRED_CATEGORIES,
+    STT_PAID_CATEGORIES,
     TERMINAL_CATEGORIES,
     UNITS_OPTIONAL_CATEGORIES,
     UNITS_REQUIRED_CATEGORIES,
@@ -224,14 +228,29 @@ def validate(raw_rows: list[dict[str, Any]]) -> list[dict]:
                 message="File validation failed",
                 details=ErrorMessages.NON_NUMERIC_AMOUNT.format(row=row_num, value="(empty)"),
             )
-        try:
-            amount = _parse_positive_numeric(
-                raw_amount, row_num,
-                ErrorMessages.NON_NUMERIC_AMOUNT,
-                ErrorMessages.NEGATIVE_AMOUNT,
-            )
-        except ValueError as exc:
-            raise FileValidationError(message="File validation failed", details=str(exc))
+
+        # SELL/REDEMPTION amounts may appear as negative in fund statements
+        # (representing money leaving the fund). Strip the sign and treat the
+        # absolute value as the positive inflow received by the investor.
+        if category in (TransactionCategory.SELL, TransactionCategory.REDEMPTION):
+            try:
+                amount = abs(float(raw_amount))
+            except (ValueError, TypeError):
+                raise FileValidationError(
+                    message="File validation failed",
+                    details=ErrorMessages.NON_NUMERIC_AMOUNT.format(
+                        row=row_num, value=raw_amount
+                    ),
+                )
+        else:
+            try:
+                amount = _parse_positive_numeric(
+                    raw_amount, row_num,
+                    ErrorMessages.NON_NUMERIC_AMOUNT,
+                    ErrorMessages.NEGATIVE_AMOUNT,
+                )
+            except ValueError as exc:
+                raise FileValidationError(message="File validation failed", details=str(exc))
 
         # ---- Units (Rules 6, 7, 8, 9) ----
         raw_units = raw.get(COL_UNITS)
@@ -248,16 +267,31 @@ def validate(raw_rows: list[dict[str, Any]]) -> list[dict]:
 
         units: Optional[float] = None
         if not units_empty:
-            try:
-                units = _parse_positive_numeric(
-                    raw_units, row_num,
-                    ErrorMessages.NON_NUMERIC_UNITS,
-                    ErrorMessages.NEGATIVE_UNITS,
-                )
-            except ValueError as exc:
-                raise FileValidationError(message="File validation failed", details=str(exc))
+            # SELL/REDEMPTION units may appear as negative in fund statements
+            # (indicating units leaving the holding). Always use the absolute
+            # value — the unit balance consistency check subtracts this amount
+            # from the cumulative, so sign does not change the direction.
+            if category in (TransactionCategory.SELL, TransactionCategory.REDEMPTION):
+                try:
+                    units = abs(float(raw_units))
+                except (ValueError, TypeError):
+                    raise FileValidationError(
+                        message="File validation failed",
+                        details=ErrorMessages.NON_NUMERIC_UNITS.format(
+                            row=row_num, value=raw_units
+                        ),
+                    )
+            else:
+                try:
+                    units = _parse_positive_numeric(
+                        raw_units, row_num,
+                        ErrorMessages.NON_NUMERIC_UNITS,
+                        ErrorMessages.NEGATIVE_UNITS,
+                    )
+                except ValueError as exc:
+                    raise FileValidationError(message="File validation failed", details=str(exc))
 
-        # ---- Price (Rules 6, 7, 8, 9) ----
+        # ---- Price (Rules 6, 7, 8, 9, 10) ----
         raw_price = raw.get(COL_PRICE)
         price_empty = _is_empty(raw_price)
 
@@ -266,12 +300,17 @@ def validate(raw_rows: list[dict[str, Any]]) -> list[dict]:
                 detail = ErrorMessages.STAMP_DUTY_NON_EMPTY_PRICE_UNIT_BALANCE.format(
                     row=row_num
                 )
-            elif category == TransactionCategory.GROSS_PURCHASE:
-                detail = ErrorMessages.GROSS_PURCHASE_NON_EMPTY_PRICE_UNIT_BALANCE.format(
+            elif category in STT_PAID_CATEGORIES:
+                detail = ErrorMessages.STT_PAID_NON_EMPTY_PRICE_UNIT_BALANCE.format(
                     row=row_num
                 )
             else:
-                detail = ErrorMessages.SELL_NON_EMPTY_PRICE_UNIT_BALANCE.format(row=row_num)
+                # GROSS_PURCHASE — the only remaining category in
+                # PRICE_UNIT_BALANCE_EMPTY_CATEGORIES after SELL/REDEMPTION
+                # were removed (Price/Unit Balance are now optional for those).
+                detail = ErrorMessages.GROSS_PURCHASE_NON_EMPTY_PRICE_UNIT_BALANCE.format(
+                    row=row_num
+                )
             raise FileValidationError(message="File validation failed", details=detail)
 
         if category in PRICE_UNIT_BALANCE_REQUIRED_CATEGORIES and price_empty:
@@ -293,7 +332,7 @@ def validate(raw_rows: list[dict[str, Any]]) -> list[dict]:
             except ValueError as exc:
                 raise FileValidationError(message="File validation failed", details=str(exc))
 
-        # ---- Unit Balance (Rules 6, 7, 8, 9) ----
+        # ---- Unit Balance (Rules 6, 7, 8, 9, 10) ----
         raw_ub = raw.get(COL_UNIT_BALANCE)
         ub_empty = _is_empty(raw_ub)
 
@@ -302,12 +341,17 @@ def validate(raw_rows: list[dict[str, Any]]) -> list[dict]:
                 detail = ErrorMessages.STAMP_DUTY_NON_EMPTY_PRICE_UNIT_BALANCE.format(
                     row=row_num
                 )
-            elif category == TransactionCategory.GROSS_PURCHASE:
-                detail = ErrorMessages.GROSS_PURCHASE_NON_EMPTY_PRICE_UNIT_BALANCE.format(
+            elif category in STT_PAID_CATEGORIES:
+                detail = ErrorMessages.STT_PAID_NON_EMPTY_PRICE_UNIT_BALANCE.format(
                     row=row_num
                 )
             else:
-                detail = ErrorMessages.SELL_NON_EMPTY_PRICE_UNIT_BALANCE.format(row=row_num)
+                # GROSS_PURCHASE — the only remaining category in
+                # PRICE_UNIT_BALANCE_EMPTY_CATEGORIES after SELL/REDEMPTION
+                # were removed (Price/Unit Balance are now optional for those).
+                detail = ErrorMessages.GROSS_PURCHASE_NON_EMPTY_PRICE_UNIT_BALANCE.format(
+                    row=row_num
+                )
             raise FileValidationError(message="File validation failed", details=detail)
 
         if category in PRICE_UNIT_BALANCE_REQUIRED_CATEGORIES and ub_empty:
@@ -329,12 +373,15 @@ def validate(raw_rows: list[dict[str, Any]]) -> list[dict]:
             except ValueError as exc:
                 raise FileValidationError(message="File validation failed", details=str(exc))
 
-        # ---- Cumulative unit tracking + consistency check (Rule 10) ----
+        # ---- Cumulative unit tracking + consistency check (Rule 11) ----
         if category in (TransactionCategory.PURCHASE, TransactionCategory.DIVIDEND_REINVEST):
             cumulative_units += units or 0.0
         elif category in (TransactionCategory.SELL, TransactionCategory.REDEMPTION):
+            # Units have already been normalised to abs() above, so subtracting
+            # here always correctly reduces the cumulative regardless of whether
+            # the original Excel value was positive or negative.
             cumulative_units -= units or 0.0
-        # STAMP_DUTY and GROSS_PURCHASE: no unit change
+        # STAMP_DUTY, STT_PAID, and GROSS_PURCHASE carry no unit movement
 
         if unit_balance is not None:
             diff = abs(cumulative_units - unit_balance)

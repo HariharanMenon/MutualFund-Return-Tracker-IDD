@@ -14,8 +14,10 @@ traces directly back to a documented intent.
 - Drag-and-drop or file-picker upload of `.xlsx` mutual fund statements
 - **Download sample template** (`MFTransaction_Template.xlsx`) directly from the upload area before uploading
 - Strict data validation with row-level error messages
-- XIRR calculation (includes Stamp Duty / STT as a cost outflow in cash flows; excludes Gross Purchase)
-- Summary metrics: Total Invested, Final Proceeds, Profit/Loss
+- XIRR calculation (Stamp Duty included as cost outflow; STT Paid netted against same-date redemption in cash flows; Gross Purchase excluded)
+- Negative SELL/REDEMPTION amounts accepted (sign ignored; absolute value used)
+- STT Paid netted against redemption in XIRR cash flow (not counted as a standalone outflow)
+- Summary metrics: Total Invested, Final Proceeds (sum of all SELL/REDEMPTION amounts less STT Paid), Profit/Loss
 - 6-column transaction grid displayed in file order
 - Skeleton loader for cold-start UX (Render free tier)
 - Fully stateless — no database, no persistence
@@ -204,7 +206,7 @@ User Browser
 2. FastAPI receives file → `file_parser` extracts first worksheet
 3. `validator` applies 15 rules (column names, date format, types, file-level invariants)
 4. `transaction_processor` normalises types and dates
-5. `xirr_calculator` builds cash flows (excluding Stamp Duty/STT), calls `numpy_financial`, computes summary metrics
+5. `xirr_calculator` builds cash flows (Stamp Duty as outflow; STT Paid netted against same-date redemption; Gross Purchase excluded), calls `numpy_financial`, computes summary metrics
 6. Response JSON → React state → components render
 
 ### Key Constraints
@@ -216,7 +218,9 @@ User Browser
 | Date format         | DD/MM/YYYY only (e.g., 18/12/2024)               |
 | Date range          | 01/01/1960 → today                               |
 | Final transaction   | Must be SELL/REDEMPTION with Unit Balance = 0    |
-| Stamp Duty / STT    | Included in Total Invested and XIRR cash flows (as outflow) |
+| SELL/REDEMPTION     | Price and Unit Balance optional; negative amounts/units accepted (absolute value used) |
+| Stamp Duty          | Included in Total Invested and XIRR cash flows (as outflow) |
+| STT Paid            | Excluded from Total Invested; netted against same-date redemption in XIRR cash flow |
 | Worksheets          | First sheet only; extras are ignored             |
 | Persistence         | None — fully in-memory, stateless                |
 
@@ -310,8 +314,8 @@ This project is built using **Intent-Driven Development** — a methodology wher
 This project maintains three core intent documents:
 | Document | Purpose | Key Sections |
 |----------|---------|--------------|
-| [`mutual-fund-xirr-tracker-feature.md`](intent/mutual-fund-xirr-tracker-feature.md) (v2.3) | Feature specification | User journeys, API contracts, 15 validation rules, edge cases, testing checklist, decision log |
-| [`product-structure.md`](intent/product-structure.md) (v2.4) | Technical architecture | Folder layout, tech stack rationale, Render free tier optimization, development workflow |
+| [`mutual-fund-xirr-tracker-feature.md`](intent/mutual-fund-xirr-tracker-feature.md) (v2.5) | Feature specification | User journeys, API contracts, 15 validation rules, edge cases, testing checklist, decision log |
+| [`product-structure.md`](intent/product-structure.md) (v2.6) | Technical architecture | Folder layout, tech stack rationale, Render free tier optimization, development workflow |
 | [`Intent_README.md`](intent/Intent_README.md) | Folder guide | How to read and use intent documents across development phases |
 
 ### Benefits
@@ -419,4 +423,4 @@ MIT
 
 ---
 
-*Last updated: June 8, 2026 — Stamp Duty / STT Paid included in XIRR cash flows as outflows*
+*Last updated: June 12, 2026 — Redemption/SELL enhancements: Price/Unit Balance optional; negative amounts accepted; STT Paid split from Stamp Duty and netted against redemption in XIRR*

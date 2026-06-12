@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { isValidFileSize, isValidFileType } from '../services/validation.js';
-import { FILE_SIZE_LIMIT_LABEL, ACCEPTED_FILE_EXTENSION, TEMPLATE_FILE_NAME, TEMPLATE_DOWNLOAD_URL } from '../utils/constants.js';
+import { FILE_SIZE_LIMIT_LABEL, ACCEPTED_FILE_EXTENSION, TEMPLATE_FILE_NAME, TEMPLATE_DOWNLOAD_URL, PRIVACY_DISCLAIMER_TEXT } from '../utils/constants.js';
 import './UploadArea.css';
 
 /**
@@ -112,6 +112,8 @@ export default function UploadArea({ onFile, disabled = false }) {
             <span className="upload-area__link">browse to upload</span>.
             <br />
             <span className="upload-area__hint">Maximum size: {FILE_SIZE_LIMIT_LABEL}</span>
+            <br />
+            <span className="upload-area__privacy">{PRIVACY_DISCLAIMER_TEXT}</span>
           </p>
         )}
       </div>

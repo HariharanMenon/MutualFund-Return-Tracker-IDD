@@ -20,6 +20,16 @@ class TransactionCategory(str, Enum):
     REDEMPTION = "REDEMPTION"
     DIVIDEND_REINVEST = "DIVIDEND_REINVEST"
     STAMP_DUTY = "STAMP_DUTY"
+    # STAMP_DUTY: purchase-side cost (e.g., "Stamp Duty", "Less: Stamp Duty").
+    # Increases Total Invested; included as a negative XIRR outflow.
+    STT_PAID = "STT_PAID"
+    # STT_PAID: redemption-side tax deducted at point of sale
+    # (e.g., "STT Paid", "Less: STT Paid", "STT").
+    # Does NOT affect Total Invested (it is not an investment cost).
+    # Reduces Final Proceeds (subtracted from gross redemption amount).
+    # In XIRR cash flows, STT_PAID is netted against the SELL/REDEMPTION
+    # inflow on the same date — only the net (pocket-to-pocket) amount
+    # appears as a cash flow entry, matching what actually hits the bank.
     GROSS_PURCHASE = "GROSS_PURCHASE"
     # GROSS_PURCHASE represents the total gross amount row emitted by platforms
     # such as MFUTILITY before splitting into Net Purchase + Stamp Duty.
@@ -57,12 +67,21 @@ DIVIDEND_REINVEST_VARIANTS: frozenset[str] = frozenset({
 
 STAMP_DUTY_VARIANTS: frozenset[str] = frozenset({
     "stamp duty",
-    "stt paid",
-    "less: stamp duty",
-    "less: stt paid",           # Alternative wording
+    "less: stamp duty",         # Alternative wording
     "stamp duty - stt",         # Different delimiter
-    "stt",                       # Abbreviated form
 })
+# Matches purchase-side stamp duty rows only.
+# STT Paid strings have been moved to STT_PAID_VARIANTS (see below).
+
+STT_PAID_VARIANTS: frozenset[str] = frozenset({
+    "stt paid",
+    "less: stt paid",           # Alternative wording
+    "stt",                      # Abbreviated form
+})
+# Matches redemption-side Securities Transaction Tax rows.
+# These are split from STAMP_DUTY because STT Paid has different
+# financial semantics: it reduces Final Proceeds (not Total Invested)
+# and is netted against the same-date redemption in XIRR cash flows.
 
 GROSS_PURCHASE_VARIANTS: frozenset[str] = frozenset({
     "gross purchase",
@@ -82,6 +101,7 @@ ALL_KNOWN_VARIANTS: frozenset[str] = (
     | REDEMPTION_VARIANTS
     | DIVIDEND_REINVEST_VARIANTS
     | STAMP_DUTY_VARIANTS
+    | STT_PAID_VARIANTS
     | GROSS_PURCHASE_VARIANTS
 )
 
@@ -96,27 +116,35 @@ ALL_KNOWN_VARIANTS: frozenset[str] = (
 #
 # Ordering rules:
 #   1. More specific / longer keywords before shorter ones.
-#   2. More restrictive categories (STAMP_DUTY, DIVIDEND_REINVEST)
+#   2. More restrictive categories (STT_PAID, STAMP_DUTY, DIVIDEND_REINVEST)
 #      before broad ones (PURCHASE) to avoid mis-classification.
+#   3. STT_PAID before STAMP_DUTY — "stt paid" is more specific than "stt".
 #
 # Examples this handles:
-#   "Net Purchase"                          → PURCHASE      (contains "purchase")
-#   "Additional Purchase"                   → PURCHASE      (contains "purchase")
-#   "Fresh SIP"                             → PURCHASE      (contains "sip")
-#   "Switch In - Purchase"                  → PURCHASE      (contains "switch in")
-#   "SWP Redemption"                        → REDEMPTION    (contains "redemption")
-#   "Switch Out"                            → REDEMPTION    (contains "switch out")
-#   "Less: STT"                             → STAMP_DUTY    (contains "stt")
+#   "Net Purchase"                          → PURCHASE       (contains "purchase")
+#   "Additional Purchase"                   → PURCHASE       (contains "purchase")
+#   "Fresh SIP"                             → PURCHASE       (contains "sip")
+#   "Switch In - Purchase"                  → PURCHASE       (contains "switch in")
+#   "SWP Redemption"                        → REDEMPTION     (contains "redemption")
+#   "Switch Out"                            → REDEMPTION     (contains "switch out")
+#   "Less: STT Paid"                        → STT_PAID       (contains "stt paid")
+#   "Less: STT"                             → STT_PAID       (contains "stt") — STT_PAID checked before STAMP_DUTY
+#   "Less: Stamp Duty"                      → STAMP_DUTY     (contains "stamp duty")
 #   "Gross Purchase - via MFUTILITY"        → GROSS_PURCHASE (contains "gross purchase")
 #   "Gross Purchase Systematic - Inst 2/155"→ GROSS_PURCHASE (contains "gross purchase")
 # ============================================================
 
 CATEGORY_KEYWORDS: dict[str, list[str]] = {
-    # STAMP_DUTY first — "stt" is short and could appear in other strings
-    "STAMP_DUTY": [
-        "stamp duty",
+    # STT_PAID first — "stt paid" must be matched before the bare "stt" in
+    # STAMP_DUTY to avoid misclassifying STT Paid rows as Stamp Duty.
+    "STT_PAID": [
         "stt paid",
         "stt",
+    ],
+    # STAMP_DUTY after STT_PAID — "stamp duty" strings are unambiguous;
+    # "stt" alone now only reaches here if "stt paid" did not match first.
+    "STAMP_DUTY": [
+        "stamp duty",
     ],
     # DIVIDEND_REINVEST before PURCHASE — "dividend" is unambiguous
     "DIVIDEND_REINVEST": [
@@ -153,16 +181,20 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
 # Functional groupings used by services
 # ============================================================
 
-# Categories that produce a NEGATIVE cash flow for XIRR (money out)
+# Categories that produce a NEGATIVE cash flow for XIRR (money out).
 # STAMP_DUTY included: it is a real cash cost paid by the investor at the
 # point of purchase and must be reflected in the true annualised return.
+# NOTE: STT_PAID is NOT in this set — it is a redemption-side deduction
+# that is netted against the same-date SELL/REDEMPTION inflow rather than
+# being recorded as a standalone negative outflow.
 XIRR_OUTFLOW_CATEGORIES: frozenset[TransactionCategory] = frozenset({
     TransactionCategory.PURCHASE,
     TransactionCategory.DIVIDEND_REINVEST,
     TransactionCategory.STAMP_DUTY,
 })
 
-# Categories that produce a POSITIVE cash flow for XIRR (money in)
+# Categories that produce a POSITIVE cash flow for XIRR (money in).
+# STT_PAID is absent — it is netted against the inflow, not a separate entry.
 XIRR_INFLOW_CATEGORIES: frozenset[TransactionCategory] = frozenset({
     TransactionCategory.SELL,
     TransactionCategory.REDEMPTION,
@@ -172,20 +204,31 @@ XIRR_INFLOW_CATEGORIES: frozenset[TransactionCategory] = frozenset({
 # GROSS_PURCHASE is excluded because it is a summary row — the actual cash
 # outflow is already captured by the accompanying Net Purchase (PURCHASE) row.
 # Including it would double-count the invested amount in XIRR calculations.
+# NOTE: STT_PAID is NOT in this set either — it participates in XIRR
+# indirectly by being netted against the SELL/REDEMPTION inflow on the same date.
 # NOTE: STAMP_DUTY is NOT excluded — it is included in XIRR_OUTFLOW_CATEGORIES
-# as a real cost outflow that affects the true annualised return.
+# as a real purchase-side cost outflow that affects the true annualised return.
 XIRR_EXCLUDED_CATEGORIES: frozenset[TransactionCategory] = frozenset({
     TransactionCategory.GROSS_PURCHASE,
 })
 
 # Categories whose amounts sum to Total Invested (summary metric).
-# Spec §7: "Sum of all PURCHASE/Buy/SIP/Systematic Investment/Stamp Duty/STT Paid"
+# Spec §7: "Sum of all PURCHASE/Buy/SIP/Systematic Investment/Stamp Duty transactions"
 # NOTE: GROSS_PURCHASE is intentionally excluded — it is a gross total row that
 # is always accompanied by a Net Purchase + Stamp Duty row pair covering the
 # same money. Including it would double-count the invested amount.
+# NOTE: STT_PAID is intentionally excluded — it is a redemption-side tax, not
+# an investment cost. It reduces Final Proceeds, not Total Invested.
 TOTAL_INVESTED_CATEGORIES: frozenset[TransactionCategory] = frozenset({
     TransactionCategory.PURCHASE,
     TransactionCategory.STAMP_DUTY,
+})
+
+# Categories that represent a redemption-side tax deducted from proceeds.
+# STT_PAID amounts are subtracted from Final Proceeds and are netted against
+# the SELL/REDEMPTION cash inflow on the same date in XIRR calculations.
+STT_PAID_CATEGORIES: frozenset[TransactionCategory] = frozenset({
+    TransactionCategory.STT_PAID,
 })
 
 # Valid categories for the terminal (last) transaction
@@ -194,17 +237,21 @@ TERMINAL_CATEGORIES: frozenset[TransactionCategory] = frozenset({
     TransactionCategory.REDEMPTION,
 })
 
-# Categories that MUST have empty Price and Unit Balance columns
+# Categories that MUST have empty Price and Unit Balance columns.
+# NOTE: SELL and REDEMPTION are intentionally absent — Price and Unit Balance
+# are now OPTIONAL on redemption rows (populated when the fund statement
+# includes them; empty when not). Only Stamp Duty, STT Paid, and Gross Purchase
+# are structurally prohibited from having these fields populated.
 PRICE_UNIT_BALANCE_EMPTY_CATEGORIES: frozenset[TransactionCategory] = frozenset({
-    TransactionCategory.SELL,
-    TransactionCategory.REDEMPTION,
     TransactionCategory.STAMP_DUTY,
+    TransactionCategory.STT_PAID,
     TransactionCategory.GROSS_PURCHASE,
 })
 
 # Categories where Units is OPTIONAL (can be empty, not a validation error)
 UNITS_OPTIONAL_CATEGORIES: frozenset[TransactionCategory] = frozenset({
     TransactionCategory.STAMP_DUTY,
+    TransactionCategory.STT_PAID,
     TransactionCategory.GROSS_PURCHASE,
 })
 
@@ -296,11 +343,11 @@ class ErrorMessages:
     STAMP_DUTY_NON_EMPTY_PRICE_UNIT_BALANCE = (
         "Row {row}: Stamp Duty transaction must have empty Price and Unit Balance columns"
     )
+    STT_PAID_NON_EMPTY_PRICE_UNIT_BALANCE = (
+        "Row {row}: STT Paid transaction must have empty Price and Unit Balance columns"
+    )
     GROSS_PURCHASE_NON_EMPTY_PRICE_UNIT_BALANCE = (
         "Row {row}: Gross Purchase transaction must have empty Price and Unit Balance columns"
-    )
-    SELL_NON_EMPTY_PRICE_UNIT_BALANCE = (
-        "Row {row}: SELL/REDEMPTION transaction must have empty Price and Unit Balance columns"
     )
     PURCHASE_MISSING_PRICE = (
         "Row {row}: {tx_type} transaction must have Price populated"
